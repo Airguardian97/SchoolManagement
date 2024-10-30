@@ -81,9 +81,9 @@ WSGI_APPLICATION = 'schoolmanagement.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'nics',  # Replace with your actual database name
-        'USER': 'sa',      # XAMPP uses 'root' by default for MySQL
-        'PASSWORD': 'p@ssw0rd',      # XAMPP's MySQL 'root' user has no password by default, but add one if you’ve set it
+        'NAME': 'aims',  # Replace with your actual database name
+        'USER': 'root',      # XAMPP uses 'root' by default for MySQL
+        'PASSWORD': '12345J@s0n',      # XAMPP's MySQL 'root' user has no password by default, but add one if you’ve set it
         'HOST': 'localhost', # This points to your local MySQL server in XAMPP
         'PORT': '3306',      # Default MySQL port in XAMPP
     }
