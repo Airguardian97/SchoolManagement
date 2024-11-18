@@ -1,0 +1,93 @@
+{% extends 'school/studentbase.html' %}
+{% load static %}
+
+{% block content %}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Grades</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+</head>
+<body>
+
+<div class="container">
+  <h1>Student Grades Report</h1>
+  
+  <label for="gradeLevel">Select Grade Level:</label>
+  <select id="gradeLevel" class="form-control">
+    <option value="all">All Grades</option>
+    {% for item in grade_levels %}
+      <option value="{{ item.grade_level }}">{{ item.grade_level }}</option>
+    {% endfor %}
+  </select>
+
+  <table class="table">
+    <thead>
+      <tr id="grading-periods-header">
+        <th>Subject Name</th>
+      
+      </tr>
+    </thead>
+    <tbody>
+      {% for subject in grades %}
+      <tr>
+        <td>{{ subject.subject_name }}</td>
+        {% comment %} {% for period in grading_periods %}
+          <td>{{ subject|get_item:period|default:"N/A" }}</td>
+        {% endfor %} {% endcomment %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('#gradeLevel').change(function() {
+      var gradeLevel = $(this).val();
+
+      $.ajax({
+        url: "{% url 'student-grade' %}",  // Ensure this URL is correct
+        data: {
+          'grade_level': gradeLevel,
+        },
+        dataType: 'json',
+        success: function(data) {
+          console.log("AJAX Response:", data);  // Log the response for debugging
+
+          // Clear the table body and header for grading periods
+          $('tbody').empty();
+          $('#grading-periods-header').empty(); // Clear existing grading periods header
+
+          // Populate the grading periods in the header
+          $('#grading-periods-header').append('<th>Subject Name</th>'); // Add "Subject Name" as the first header
+          $.each(data.grading_periods, function(i, period) {
+            $('#grading-periods-header').append('<th>' + period + '</th>'); // Add each grading period to the header
+          });
+
+          // Populate the table with filtered grades
+          $.each(data.grades, function(index, grade) {
+            var row = '<tr><td>' + grade.subject_name + '</td>';
+            
+            // Add cells for each grading period dynamically
+            $.each(data.grading_periods, function(i, period) {
+              row += '<td>' + (grade[period] || 'N/A') + '</td>'; // Access grades using the period as the key
+            });
+            row += '</tr>';
+            $('tbody').append(row); // Add the constructed row to the table body
+          });
+        },
+        error: function(xhr, status, error) {
+          console.error("An error occurred: " + error); // Log errors for debugging
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+</body>
+{% endblock content %}

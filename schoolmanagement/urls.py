@@ -75,7 +75,7 @@ urlpatterns = [
     path('student-dashboard', views.student_dashboard_view,name='student-dashboard'),
     path('student-attendance', views.student_attendance_view,name='student-attendance'),
     path('student-soa', views.student_soa,name='student-soa'),
-
+    path('student-grade', views.student_grade,name='student-grade'),
 
 
     path('aboutus', views.aboutus_view),

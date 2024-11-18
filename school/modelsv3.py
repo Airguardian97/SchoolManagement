@@ -6,7 +6,6 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
-from django.contrib.auth.models import User
 
 
 class AuthGroup(models.Model):
@@ -415,8 +414,8 @@ class Student(models.Model):
 
 
 class Studentenrollsubject(models.Model):
-    sr_id = models.ForeignKey('Studentregister', db_column='sr_id', on_delete=models.CASCADE)  # Updated to reference Subject  # Field name made lowercase.
-    subject_code = models.ForeignKey('Subject', db_column='subject_code', on_delete=models.CASCADE)  # Updated to reference Subject  # Field name made lowercase.
+    sr_id = models.CharField(db_column='SR_ID', max_length=90)  # Field name made lowercase.
+    subject_code = models.CharField(db_column='subject_Code', max_length=90)  # Field name made lowercase.
     ref = models.AutoField(db_column='Ref', primary_key=True)  # Field name made lowercase.
 
     class Meta:

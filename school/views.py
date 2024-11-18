@@ -10,7 +10,9 @@ from django.core.mail import send_mail
 # from school.models import *
 from django.db.models import Value, F, CharField
 from django.db.models.functions import Concat
-
+from django.http import JsonResponse 
+from django.http import HttpResponse
+from django.contrib.auth import logout  # Import the logout function
 
 
 def home_view(request):
@@ -112,7 +114,7 @@ def teacher_signup_view(request):
 
 
 #for checking user is techer , student or admin
-def is_admin(user):
+def is_admin(user):    
     return user.groups.filter(name='ADMIN').exists()
 def is_teacher(user):
     return user.groups.filter(name='TEACHER').exists()
@@ -121,26 +123,30 @@ def is_student(user):
 def is_student_email(user):
     return modelsv2.Parent.objects.filter(email_address=user.email).exists()
     
-
 def afterlogin_view(request):
-    
-    if is_admin(request.user):
-        return redirect('admin-dashboard')
-    elif is_teacher(request.user):
-        accountapproval=models.TeacherExtra.objects.all().filter(user_id=request.user.id,status=True)
-        if accountapproval:
-            return redirect('teacher-dashboard')
-        else:
-            return render(request,'school/teacher_wait_for_approval.html')
-    elif is_student(request.user):
-        if is_student_email(request.user):            
-            accountapproval=models.StudentExtra.objects.all().filter(user_id=request.user.id,status=True)
+    try:
+        if is_admin(request.user):
+            return redirect('admin-dashboard')
+        elif is_teacher(request.user):
+            accountapproval = models.TeacherExtra.objects.all().filter(user_id=request.user.id, status=True)
             if accountapproval:
-                
-                return redirect('student-dashboard')
+                return redirect('teacher-dashboard')
             else:
-                return render(request,'school/student_wait_for_approval.html')
+                return render(request, 'school/teacher_wait_for_approval.html')
+        elif is_student(request.user):
+            if is_student_email(request.user):
+                accountapproval = models.StudentExtra.objects.all().filter(user_id=request.user.id, status=True)
+                if accountapproval:
+                    return redirect('student-dashboard')
+                else:
+                    return render(request, 'school/student_wait_for_approval.html')
+            logout(request)            
+            return HttpResponse("Error: Unauthorized access. Please contact support.", status=403)
 
+    except Exception as e:
+        # Log out the user if an error occurs
+        
+        return HttpResponse(f"An error occurred: {str(e)}. You have been logged out for security reasons.", status=500)
 
 
 
@@ -644,7 +650,7 @@ def student_soa(request):
         parentstudent = modelsv2.Parentstudent.objects.get(gid=parent.pid)
         
         student_ref = parentstudent.stud_id
-        print(student_ref)       
+            
     except Parent.DoesNotExist:
         # Handle the case where the parent does not exist
         print("Parent not found for the given email.")
@@ -666,8 +672,9 @@ def student_soa(request):
 
         # Retrieve student and register info
         student = modelsv2.Student.objects.get(ref=student_ref)
-        studentsr = modelsv2.Studentregister.objects.get(stud_id=student_ref)
+        studentsr = modelsv2.Studentregister.objects.filter(stud_id=student_ref).first()
 
+        
         student_info = {
             'lrn_no': student.lrn_no,
             'name': f"{student.last_name}, {student.first_name} {student.middle_name or ''}",
@@ -747,15 +754,123 @@ def student_soa(request):
         # Render to the template
         return render(request, 'school/student_soa.html', context)
 
-    except Student.DoesNotExist:
-        print(f"Student with ref {student_ref} not found")
-        return render(request, 'school/error.html', {'message': 'Student not found.'})  # Handle error gracefully
-    except Studentregister.DoesNotExist:
-        print(f"Student register for student with ref {student_ref} not found")
-        return render(request, 'school/error.html', {'message': 'Student register not found.'})  # Handle error gracefully
+    # except student.DoesNotExist:
+    #     print(f"Student with ref {student_ref} not found")
+    #     return render(request, 'school/error.html', {'message': 'Student not found.'})  # Handle error gracefully
+    # except Studentregister.DoesNotExist:
+    #     print(f"Student register for student with ref {student_ref} not found")
+    #     return render(request, 'school/error.html', {'message': 'Student register not found.'})  # Handle error gracefully
     except Exception as e:
         print(f"An unexpected error occurred: {str(e)}")
         return render(request, 'school/error.html', {'message': 'An unexpected error occurred.'})  # Handle unexpected errors
+    
+    
+    
+@login_required(login_url='studentlogin')
+@user_passes_test(is_student)
+def student_grade(request):
+    user_email = request.user.email
+    student_ref = 1  # Adjust this dynamically as needed
+    
+    parent = modelsv2.Parent.objects.get(email_address=user_email)
+    parentstudent = modelsv2.Parentstudent.objects.get(gid=parent.pid)        
+    student_ref = parentstudent.stud_id    
+    
+    try:
+        # Get distinct grade levels for the student
+        grade_levels = modelsv2.Studentregister.objects.filter(stud_id=student_ref).values('grade_level').distinct()
+
+        # Initialize grades_data for use in context
+        grades_data = []
+        grading_periods = set()
+        # Check if it's an AJAX request to filter grades
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 'grade_level' in request.GET:
+            selected_grade = request.GET.get('grade_level')
+
+            # Filter grades based on selected grade level (if not "all")
+            if selected_grade != "all":
+                # Make sure to replace 'gradelevel' with the correct field name if necessary
+                #grades = modelsv2.Grade.objects.filter(stud_id=student_ref, gradelevel=selected_grade)  # Assuming subject_code has grade_level
+                 # Perform the query
+                grades = modelsv2.Grade.objects.filter(
+                    stud_id=student_ref,
+                    subject_code__grade_level=selected_grade  # Filtering based on the Subject's grade_level
+                ).select_related('subject_code')
+          
+            else:
+                grades = modelsv2.Grade.objects.filter(stud_id=student_ref)
+
+            # Prepare grades data for JSON response
+            # grades_data = list(grades.values('subject_code', 'stud_grade', 'gradelevel'))  # Adjust fields as necessary
+            # Prepare grades data with subject names
+            # Initialize an empty list to hold the individual grades
+            grades_data = []
+            # Initialize an empty set to collect unique grading periods
+            
+
+            # Populate the grades_data list with the original grades
+            for grade in grades:
+                subject_id = grade.subject_code.ref  # Get the actual ID of the subject
+                subject = modelsv2.Subject.objects.filter(ref=subject_id).first()  # Get the subject by ID
+                subject_name = subject.sub_name if subject else "Unknown"  # Handle case where subject is not found
+                
+                grading_periods.add(grade.grading_period)  # Collect unique grading periods
+                
+                grades_data.append({
+                    'subject_code': grade.subject_code.subject_code,  # Include subject code
+                    'subject_name': subject_name,
+                    'stud_grade': grade.stud_grade,
+                    'gradelevel': grade.subject_code.grade_level,
+                    'grading_period': grade.grading_period,
+                })
+
+         
+
+            # Initialize an empty dictionary to hold the pivoted grades data
+            pivoted_grades_data = {}
+
+            # Populate the dictionary with the pivoted grades data
+            for grade in grades_data:
+                subject_name = grade['subject_name']
+                grading_period = grade['grading_period']
+                stud_grade = grade['stud_grade']
+                
+                # If the subject is not yet in the dictionary, add it
+                if subject_name not in pivoted_grades_data:
+                    pivoted_grades_data[subject_name] = {'subject_name': subject_name}
+                
+                # Add the grade for the current grading period
+                pivoted_grades_data[subject_name][grading_period] = stud_grade
+
+            # Convert the dictionary to a list of dictionaries
+            grades_data_list = list(pivoted_grades_data.values())
+
+            grading_periods_list = list(grading_periods)
+
+                        
+            
+            
+            print(grades_data_list)
+            return JsonResponse({'grades': grades_data_list, 'grading_periods': list(grading_periods)})
+
+
+        # For the initial page load, get grades without filtering
+        grades = modelsv2.Grade.objects.filter(stud_id=student_ref)
+
+        # Prepare data for rendering the template
+        context = {
+            'grade_levels': grade_levels,
+            'grades': grades_data,
+            'grading_periods': grading_periods,
+            # This will be empty if the page is loaded for the first time
+        }
+
+        return render(request, 'school/student_grade.html', context)
+
+    except Exception as e:
+        print(f"An unexpected error occurred: {str(e)}")
+        return render(request, 'school/error.html', {'message': 'An unexpected error occurred.'})
+
 
 
 # for aboutus and contact ussssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
