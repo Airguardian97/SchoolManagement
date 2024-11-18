@@ -88,7 +88,7 @@ DATABASES = {
  
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'aims',  # Replace with your actual database name
+        'NAME': 'nics',  # Replace with your actual database name
         'USER': 'aims',      # XAMPP uses 'root' by default for MySQL
         'PASSWORD': '12345J@s0n',      # XAMPP's MySQL 'root' user has no password by default, but add one if you’ve set it
         'HOST': 'localhost', # This points to your local MySQL server in XAMPP

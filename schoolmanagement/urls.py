@@ -63,7 +63,7 @@ urlpatterns = [
     path('admin-view-fee/<str:cl>', views.admin_view_fee_view,name='admin-view-fee'),
 
     path('admin-notice', views.admin_notice_view,name='admin-notice'),
-
+    path('save-db/', views.save_sql,name='save_sql'),
 
 
     path('teacher-dashboard', views.teacher_dashboard_view,name='teacher-dashboard'),

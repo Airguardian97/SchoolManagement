@@ -13,6 +13,9 @@ from django.db.models.functions import Concat
 from django.http import JsonResponse 
 from django.http import HttpResponse
 from django.contrib.auth import logout  # Import the logout function
+from django.db import IntegrityError
+import re  # Add this import
+from datetime import datetime
 
 
 def home_view(request):
@@ -888,3 +891,237 @@ def contactus_view(request):
             send_mail(str(name)+' || '+str(email),message,settings.EMAIL_HOST_USER, settings.EMAIL_RECEIVING_USER, fail_silently = False)
             return render(request, 'school/contactussuccess.html')
     return render(request, 'school/contactus.html', {'form':sub})
+
+
+
+def save_sql(request):
+    if request.method == "POST":
+        
+        # try:
+        #     modelsv2.Scharges.objects.create(
+        #         stud_id='STUD123',
+        #         date='2024-11-18',
+        #         description='Test',
+        #         amount=100,
+        #         atm_balance=500,
+        #     )
+        #     print("Record added successfully.")
+        # except Exception as e:
+        #     print(f"An error occurred: {e}")
+
+
+        
+        
+        sql_statements = request.POST.get('sql_statements')
+
+        # Split SQL statements into individual statements
+        insert_statements = sql_statements.strip().split(";")
+        modelsv2.Scharges.objects.all().delete()
+        modelsv2.Spayment.objects.all().delete()
+        for statement in insert_statements:
+            # print(f"Processing statement: {statement.strip()}")
+            if statement.strip():  # Skip empty statements
+                try:
+                    print(statement.strip().lower())
+                    parse_and_save(statement.strip())
+                except (ValueError, IntegrityError) as e:
+                    print(f"Error: {e}")
+                    return render(request, 'error.html', {'error_message': f'Error processing statement: {e}'})
+                except Exception as e:
+                    print(f"Unexpected error: {e}")
+                    return render(request, 'error.html', {'error_message': f'Unexpected error: {e}'})
+
+        return redirect('admin-dashboard')  # Redirect or show success page after saving
+
+    return render(request, 'school/admin_savedb.html')  # If GET request, show the form
+
+
+def parse_and_save(statement):
+    print(f"Processing statement: {statement}")
+
+    # Check for 'scharges' table insert statement
+    if "insert into scharges" in statement.lower():
+        # Clear all existing records in scharges table
+        # modelsv2.Scharges.objects.all().delete()
+        # print("All records in scharges table have been deleted.")
+
+        # Use regular expression to extract values inside parentheses
+        values_index = statement.lower().find("values")  # Find position of the 'VALUES' keyword
+
+        # Slice the string to get everything after the 'VALUES' keyword and the following opening parenthesis
+        values_text = statement[values_index + len("VALUES "):]  # Skip past the 'VALUES ' keyword
+        values_text = values_text.strip()
+
+        # Clean up any extra spaces or quotes, but retain the structure of the values
+        # Split the values by comma, ensuring quoted strings remain intact
+        values = []
+        temp_value = ""
+        inside_quotes = False
+
+        for char in values_text:
+            if char == "'" and not inside_quotes:
+                inside_quotes = True
+                temp_value += char
+            elif char == "'" and inside_quotes:
+                inside_quotes = False
+                temp_value += char
+                values.append(temp_value.strip())  # Add the value and reset
+                temp_value = ""
+            elif char == ',' and not inside_quotes:
+                if temp_value.strip():
+                    values.append(temp_value.strip())  # Add the value and reset
+                temp_value = ""
+            else:
+                temp_value += char
+
+        # Handle any leftover value (in case the last value is not followed by a comma)
+        if temp_value.strip():
+            values.append(temp_value.strip())
+
+        print("Raw values extracted:", values)
+
+        if values:
+            if len(values) != 6:
+                print(f"Error: Expected 6 values, but found {len(values)}")
+                raise ValueError("Invalid number of values in INSERT statement")
+
+            table_pk = values[0]
+            stud_id = values[1].strip("'")
+            date = values[2]
+            description = values[3].strip("'")
+
+            # Debugging: Print the raw amount and ATM Balance before conversion
+            print(f"Amount before conversion: {values[4]}")
+            print(f"ATM Balance before conversion: {values[5]}")
+
+            # Convert the date to YYYY-MM-DD format
+            try:
+                date = date.strip("'")
+                date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S").date()  # Convert to date object
+            except ValueError as e:
+                print(f"Error converting date: {date}")
+                raise e
+
+            try:
+                # Use regex to remove all non-numeric characters
+                clean_amount = re.sub(r'\D', '', values[4])  # \D matches anything that is not a digit
+
+                amount = int(clean_amount)  # Convert to integer
+            except ValueError as e:
+                print(f"Error converting amount: {values[4]} (must be a number)")
+                raise e
+
+            try:
+                clean_amount = re.sub(r'\D', '', values[5])
+                atm_balance = int(clean_amount)  # Convert to integer
+            except ValueError as e:
+                print(f"Error converting atm_balance: {values[5]} (must be a number)")
+                raise e
+
+            # Additional validation before creating the record
+            if stud_id and date and description and amount >= 0 and atm_balance >= 0:
+                # Only create the record if all conditions are met
+                modelsv2.Scharges.objects.create(
+                    stud_id=stud_id,
+                    date=date,
+                    description=description,
+                    amount=amount,
+                    atm_balance=atm_balance,
+                )
+                print("Record successfully added to scharges.")
+            else:
+                print(f"Validation failed for stud_id: {stud_id}, date: {date}, description: {description}, amount: {amount}, atm_balance: {atm_balance}")
+
+    # Check for 'spayment' table insert statement
+    elif "insert into spayment" in statement.lower():
+        # Clear all existing records in spayment table
+        # modelsv2.Spayment.objects.all().delete()
+        # print("All records in spayment table have been deleted.")
+
+        # Use regular expression to extract values inside parentheses
+        values_index = statement.lower().find("values")  # Find position of the 'VALUES' keyword
+
+        # Slice the string to get everything after the 'VALUES' keyword and the following opening parenthesis
+        values_text = statement[values_index + len("VALUES "):]  # Skip past the 'VALUES ' keyword
+        values_text = values_text.strip()
+
+        # Clean up any extra spaces or quotes, but retain the structure of the values
+        # Split the values by comma, ensuring quoted strings remain intact
+        values = []
+        temp_value = ""
+        inside_quotes = False
+
+        for char in values_text:
+            if char == "'" and not inside_quotes:
+                inside_quotes = True
+                temp_value += char
+            elif char == "'" and inside_quotes:
+                inside_quotes = False
+                temp_value += char
+                values.append(temp_value.strip())  # Add the value and reset
+                temp_value = ""
+            elif char == ',' and not inside_quotes:
+                if temp_value.strip():
+                    values.append(temp_value.strip())  # Add the value and reset
+                temp_value = ""
+            else:
+                temp_value += char
+
+        # Handle any leftover value (in case the last value is not followed by a comma)
+        if temp_value.strip():
+            values.append(temp_value.strip())
+
+        print("Raw values extracted:", values)
+
+        if values:
+            if len(values) != 7:
+                print(f"Error: Expected 7 values, but found {len(values)}")
+                raise ValueError("Invalid number of values in INSERT statement")
+
+            table_pk = values[0]
+            stud_id = values[2].strip("'")
+            date = values[3]
+            description = values[4].strip("'")
+
+            # Debugging: Print the raw amount and ATM Balance before conversion
+            print(f"Amount before conversion: {values[4]}")
+            print(f"ATM Balance before conversion: {values[5]}")
+
+            # Convert the date to YYYY-MM-DD format
+            try:
+                date = date.strip("'")
+                date = datetime.strptime(date, "%Y-%m-%d %H:%M:%S").date()  # Convert to date object
+            except ValueError as e:
+                print(f"Error converting date: {date}")
+                raise e
+
+            try:
+                clean_amount = re.sub(r'\D', '', values[5])
+                amount = int(clean_amount)
+            except ValueError as e:
+                print(f"Error converting amount: {values[5]} (must be a number)")
+                raise e
+
+            try:
+                clean_amount = re.sub(r'\D', '', values[6])
+                atm_balance = int(clean_amount)
+            except ValueError as e:
+                print(f"Error converting atm_balance: {values[6]} (must be a number)")
+                raise e
+
+            # Additional validation before creating the record
+            if stud_id and date and description and amount >= 0 and atm_balance >= 0:
+                # Only create the record if all conditions are met
+                modelsv2.Spayment.objects.create(
+                    table_pk=table_pk,
+                    stud_id=stud_id,
+                    date=date,
+                    description=description,
+                    amount=amount,
+                    atm_balance=atm_balance,
+                )
+                print("Record successfully added to spayment.")
+            else:
+                print(f"Validation failed for table_pk: {table_pk}, stud_id: {stud_id}, date: {date}, description: {description}, amount: {amount}, atm_balance: {atm_balance}")
+    else:
+        print("Statement does not match any known table pattern.")
