@@ -150,13 +150,16 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS=[
-STATIC_DIR,
- ]
 
 
+if DEBUG:
 
-LOGIN_REDIRECT_URL='/afterlogin'
+    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+else:
+
+    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
 
 # #for contact us give your gmail id and password
 # EMAIL_BACKEND ='django.core.mail.backends.smtp.EmailBackend'
