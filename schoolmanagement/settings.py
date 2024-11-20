@@ -19,7 +19,7 @@ STATIC_DIR=os.path.join(BASE_DIR,'static')
 
 
 # Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
+# See https://docs.djangoproject.com/e  n/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'k0ujs9pcw+7qohwas!o7_ept20$c@$)-b=qco8sgviy_f)((bc'
@@ -88,7 +88,7 @@ DATABASES = {
  
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'nics',  # Replace with your actual database name
+        'NAME': 'aims',  # Replace with your actual database name
         'USER': 'aims',      # XAMPP uses 'root' by default for MySQL
         'PASSWORD': '12345J@s0n',      # XAMPP's MySQL 'root' user has no password by default, but add one if you’ve set it
         'HOST': 'localhost', # This points to your local MySQL server in XAMPP
@@ -149,17 +149,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # If your static folder is in the base directory
 
 
-
-if DEBUG:
-
-    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-
-else:
-
-    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-
+LOGIN_REDIRECT_URL='/afterlogin'
 
 # #for contact us give your gmail id and password
 # EMAIL_BACKEND ='django.core.mail.backends.smtp.EmailBackend'
