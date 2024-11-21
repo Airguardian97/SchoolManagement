@@ -22,20 +22,24 @@
     {% endfor %}
   </select>
 
+  {% comment %} <label for="studentRef">Student Reference:</label>
+  <input type="text" id="studentRef" class="form-control" value="{{ student_ref }}" readonly> {% endcomment %}
+
   <table class="table">
     <thead>
       <tr id="grading-periods-header">
         <th>Subject Name</th>
-      
       </tr>
     </thead>
     <tbody>
       {% for subject in grades %}
       <tr>
         <td>{{ subject.subject_name }}</td>
-        {% comment %} {% for period in grading_periods %}
-          <td>{{ subject|get_item:period|default:"N/A" }}</td>
-        {% endfor %} {% endcomment %}
+        {% comment %} 
+          {% for period in grading_periods %}
+            <td>{{ subject|get_item:period|default:"N/A" }}</td>
+          {% endfor %} 
+        {% endcomment %}
       </tr>
       {% endfor %}
     </tbody>
@@ -46,11 +50,13 @@
   $(document).ready(function() {
     $('#gradeLevel').change(function() {
       var gradeLevel = $(this).val();
+      var studentRef = "{{ student_ref }}";  // Get student_ref from the context and assign to a JavaScript variable
 
       $.ajax({
         url: "{% url 'student-grade' %}",  // Ensure this URL is correct
         data: {
           'grade_level': gradeLevel,
+          'student_ref': studentRef,  // Include student_ref in the data sent to the server
         },
         dataType: 'json',
         success: function(data) {
@@ -85,9 +91,6 @@
     });
   });
 </script>
-
-
-
 
 </body>
 {% endblock content %}

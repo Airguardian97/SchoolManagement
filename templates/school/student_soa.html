@@ -4,83 +4,69 @@
 {% block content %}
 
 <style>
-    /* Reset body margin and padding */
     body {
         font-family: Arial, sans-serif;
-        margin: 0;  /* Remove margin */
-        padding: 0; /* Remove padding */
+        margin: 0;
+        padding: 0;
     }
-
-    /* Ensure container has margin only from the sides */
     .container {
         width: 800px;
-        margin: 0 auto; /* Center the container */
+        margin: 0 auto;
         padding: 20px;
         border: 1px solid #000;
     }
-
-    /* Header styles */
     .header {
         text-align: center;
         margin-bottom: 10px;
     }
-
     .header h1 {
         margin: 0;
         font-size: 24px;
     }
-
-    .header h2 {
+    .header h2, .header h3 {
         margin: 0;
         font-size: 18px;
     }
-
-    .header h3 {
-        margin: 0;
-        font-size: 14px;
-        margin-bottom: 10px;
-    }
-
-    /* Table styles */
-    .info {
-        width: 100%;
-        margin-bottom: 10px;
-    }
-
     .info td {
         padding: 5px;
         vertical-align: top;
     }
-
     .table {
         width: 100%;
         border-collapse: collapse;
     }
-
     .table th, .table td {
         border: 1px solid black;
         padding: 8px;
         text-align: center;
     }
-
     .table th {
         background-color: #003366;
         color: white;
     }
-
-    /* Balance section styles */
     .balance {
         text-align: right;
         font-weight: bold;
         padding: 10px;
     }
-
 </style>
+
+{% comment %} {% if students %}
+<form method="get" action="{% url 'student-soa' %}">
+    <label for="student_ref">Select Student:</label>
+    <select name="student_ref" id="student_ref" onchange="this.form.submit()">
+        {% for student in students %}
+            <option value="{{ student.ref }}" {% if student.ref == student_info.ref %}selected{% elif forloop.first %}selected{% endif %}>
+                {{ student.last_name }}, {{ student.first_name }} {{ student.middle_name }}
+            </option>
+        {% endfor %}
+    </select>
+</form>
+{% endif %} {% endcomment %}
 
 <div class="container">
     <div class="header">
         <h1>Ritz School of Integrated Studies Inc.</h1>
-        <h2></h2>
         <h3>Maya, Balasan, Iloilo</h3>
         <h2>Student Financial Statement</h2>
     </div>
@@ -108,16 +94,22 @@
             </tr>
         </thead>
         <tbody>
-            {% for transaction in transactions %}
-            <tr>
-                <td>{{ transaction.table_pk }}</td>
-                <td>{{ transaction.date }}</td>
-                <td>{{ transaction.transaction_type }}</td>
-                <td>{{ transaction.c_amount }}</td>
-                <td>{{ transaction.p_amount }}</td>
-                <td>{{ transaction.balance }}</td>
-            </tr>
-            {% endfor %}
+            {% if transactions %}
+                {% for transaction in transactions %}
+                    <tr>
+                        <td>{{ transaction.table_pk }}</td>
+                        <td>{{ transaction.date }}</td>
+                        <td>{{ transaction.transaction_type }}</td>
+                        <td>{{ transaction.c_amount }}</td>
+                        <td>{{ transaction.p_amount }}</td>
+                        <td>{{ transaction.balance }}</td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="6">No transactions available for this period.</td>
+                </tr>
+            {% endif %}
         </tbody>
     </table>
 

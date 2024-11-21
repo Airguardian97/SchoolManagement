@@ -125,7 +125,7 @@ class Grade(models.Model):
     stud_grade = models.CharField(db_column='stud_Grade', max_length=90)  # Field name made lowercase.
     academic_year = models.CharField(db_column='academic_Year', max_length=90)  # Field name made lowercase.
     grading_period = models.CharField(db_column='grading_Period', max_length=90)  # Field name made lowercase.
-    gradelevel = models.CharField(db_column='GradeLevel', max_length=90)  # Field name made lowercase.
+    # gradelevel = models.CharField(db_column='GradeLevel', max_length=90)  # Field name made lowercase.
 
     class Meta:
         managed = False

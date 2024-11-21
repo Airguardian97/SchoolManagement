@@ -641,235 +641,372 @@ def student_attendance_view(request):
 
 import logging
 
+
 @login_required(login_url='studentlogin')
 @user_passes_test(is_student)
 def student_soa(request):
     user_email = request.user.email
+    students = []
+    selected_student = None
+    student_info = {}
+    transactions = []
+    net_balance = 0.0
+
     try:
-        
-        student_ref = 131 # Change this as needed
-        
-        parent = modelsv2.Parent.objects.get(email_address=user_email)
-        parentstudent = modelsv2.Parentstudent.objects.get(gid=parent.pid)
-        
-        student_ref = parentstudent.stud_id
+        # Fetch parent based on user email
+        parents = modelsv2.Parent.objects.filter(email_address=user_email)
+
+        if not parents.exists():
+            print("Parent not found for the given email.")
+            return render(request, 'school/error.html', {'message': 'Parent not found.'})
+
+        parent = parents.first()  # Select the first parent if multiple exist for now
+
+        # Fetch associated students
+        parent_students = modelsv2.Parentstudent.objects.filter(gid=parent.pid)
+
+        if parent_students.exists():
+            students = modelsv2.Student.objects.filter(ref__in=[ps.stud_id for ps in parent_students])
+            if students.exists():
+                print("Students found:", students)
+            else:
+                print("No students found for this parent.")
+        else:
+            print("No student records associated with this parent.")
+
+        # Get the selected student from the GET request
+        student_ref = request.GET.get('student_ref')
+        print(request.GET.get('student_ref'))
+        # If there's a selected student, filter by the selected student reference
+        if student_ref:
+            selected_student = students.get(ref=student_ref)  # This will raise an exception if not found
+            print("found", selected_student)
+        else:
+            selected_student = students.first()  # Set the first student as default if none selected
+
+        # Now fetch the student information and transactions based on the selected student
+        if selected_student:
+            student_info = {
+                'lrn_no': selected_student.lrn_no,
+                'name': f"{selected_student.last_name}, {selected_student.first_name} {selected_student.middle_name or ''}",
+                'grade': "selected_student.grade_level",
+                'voucher': selected_student.if_voucher,
+                # 'strand': selected_student.strand,
+            }
+
+            # Retrieve charges and payments
+            start_date = '2024-06-01'
+            end_date = '2024-12-01'
+
+            queryset_charges = modelsv2.Scharges.objects.filter(stud_id=selected_student.ref, date__range=[start_date, end_date])
+            queryset_payments = modelsv2.Spayment.objects.filter(stud_id=selected_student.ref, date__range=[start_date, end_date])
+            print(queryset_charges)
             
-    except Parent.DoesNotExist:
-        # Handle the case where the parent does not exist
-        print("Parent not found for the given email.")
-    except Parentstudent.DoesNotExist:
-        # Handle the case where the parent-student relationship does not exist
-        print("No student found for this parent.")
-    except Parentstudent.MultipleObjectsReturned:
-        # Handle the case where multiple students are found for the parent
-        print("Multiple students found for this parent.")
-    except Exception as e:
-        # Catch-all for other exceptions
-        print(f"An unexpected error occurred: {str(e)}")
-    
-      
-    try:
-        # Retrieve start and end dates from query parameters or hardcoded for now
-        start_date = '2024-06-01'
-        end_date = '2024-12-01'
+            # For each queryset, you can loop through and print individual fields
+            for charge in queryset_charges:
+                print(f"Charge: {charge.description}, Amount: {charge.amount}, Date: {charge.date}")
+                
+            for payment in queryset_payments:
+                print(f"Payment: {payment.description}, Amount: {payment.amount}, Date: {payment.date}")
+            
+            
+            # Combine and prepare transactions for display
+            charges = queryset_charges.annotate(
+                c_amount=F('amount'),
+                p_amount=Value(0),
+                transaction_type=Value('Charge')
+            )
+            payments = queryset_payments.annotate(
+                c_amount=Value(0),
+                p_amount=F('amount'),
+                transaction_type=Value('Payment')
+            )
 
-        # Retrieve student and register info
-        student = modelsv2.Student.objects.get(ref=student_ref)
-        studentsr = modelsv2.Studentregister.objects.filter(stud_id=student_ref).first()
+            transactions = sorted(
+                list(charges) + list(payments),
+                key=lambda t: t.date
+            )
 
-        
-        student_info = {
-            'lrn_no': student.lrn_no,
-            'name': f"{student.last_name}, {student.first_name} {student.middle_name or ''}",
-            'grade': studentsr.grade_level,
-            'voucher': student.if_voucher,
-            'strand': studentsr.strand,
-        }
+            # Calculate running balance
+            balance = 0
+            for transaction in transactions:
+                balance += transaction.c_amount - transaction.p_amount
+                transaction.balance = balance
 
-        print("Student Info:", student_info)
+            # Set the final net balance
+            net_balance = balance
 
-        # Retrieve charges within the date range
-        queryset = modelsv2.Scharges.objects.filter(stud_id=student_ref, date__range=[start_date, end_date])
-        total_charges = 0
-        # Print each record in the QuerySet
-        if queryset.exists():
-            print("Records found:")
-            for charge in queryset:
-                print(f"Charge ID: {charge.table_pk}, Amount: {charge.amount}, Date: {charge.date}, Student ID: {charge.stud_id}")
-                total_charges += charge.amount
-        else:
-            print("No charges found for this student between these dates.")
-        print("total charges", total_charges)
-        
-                # Retrieve charges within the date range
-        queryset2 = modelsv2.Spayment.objects.filter(stud_id=student_ref, date__range=[start_date, end_date])
-        total_pd = 0
-        # Print each record in the QuerySet
-        if queryset2.exists():
-            print("Records found:")
-            for pd in queryset2:
-                print(f"Charge ID: {pd.table_pk}, Amount: {pd.amount}, Date: {pd.date}, Student ID: {pd.stud_id}")
-                total_pd += pd.amount
-        else:
-            print("No charges found for this student between these dates.")
-        print("total charges", total_pd)
-        
-        
-        
-        
-        
-        
-        # Retrieve transactions after the start date
-        charges = modelsv2.Scharges.objects.filter(stud_id=student_ref, date__gte=start_date).annotate(
-            c_amount=F('amount'),
-            p_amount=Value(0),
-            transaction_type=Value('Charge')
-        )
-
-        payments = modelsv2.Spayment.objects.filter(stud_id=student_ref, date__gte=start_date).annotate(
-            c_amount=Value(0),
-            p_amount=F('amount'),
-            full_description=Concat('description', Value(' (R:'), F('pk'), Value(')'), output_field=CharField()),
-            transaction_type=Value('Payment')
-        )
-
-        # Combine and order transactions by date
-        transactions = sorted(
-            list(charges) + list(payments),
-            key=lambda t: t.date
-        )
-        print(transactions)
-
-        # Calculate running balance
-        balance = 0  # Initialize balance; set previous balance if applicable
-        for transaction in transactions:
-            balance += transaction.c_amount - transaction.p_amount
-            transaction.balance = balance
-
-        # Prepare context data
-        context = {
-            'transactions': transactions,
-            'student_info': student_info,
-            'previous_balance': balance,  # Set this according to your logic
-            'net_balance': balance,
-        }
-
-        # Render to the template
-        return render(request, 'school/student_soa.html', context)
-
-    # except student.DoesNotExist:
-    #     print(f"Student with ref {student_ref} not found")
-    #     return render(request, 'school/error.html', {'message': 'Student not found.'})  # Handle error gracefully
-    # except Studentregister.DoesNotExist:
-    #     print(f"Student register for student with ref {student_ref} not found")
-    #     return render(request, 'school/error.html', {'message': 'Student register not found.'})  # Handle error gracefully
     except Exception as e:
         print(f"An unexpected error occurred: {str(e)}")
-        return render(request, 'school/error.html', {'message': 'An unexpected error occurred.'})  # Handle unexpected errors
+        return render(request, 'school/error.html', {'message': 'An unexpected error occurred.'})
+
+    # Return the data to the template
+    return render(request, 'school/student_soa.html', {
+        'students': students,
+        'selected_student': selected_student,
+        'student_info': student_info,
+        'transactions': transactions,
+        'net_balance': net_balance,
+    })
     
     
     
 @login_required(login_url='studentlogin')
 @user_passes_test(is_student)
-def student_grade(request):
+def student_list(request):
     user_email = request.user.email
-    student_ref = 1  # Adjust this dynamically as needed
-    
-    parent = modelsv2.Parent.objects.get(email_address=user_email)
-    parentstudent = modelsv2.Parentstudent.objects.get(gid=parent.pid)        
-    student_ref = parentstudent.stud_id    
-    
+    students = []
+    selected_student = None
+    student_info = {}
+    transactions = []
+    net_balance = 0.0
+
     try:
-        # Get distinct grade levels for the student
+        # Fetch parent based on user email
+        parents = modelsv2.Parent.objects.filter(email_address=user_email)
+
+        if not parents.exists():
+            print("Parent not found for the given email.")
+            return render(request, 'school/error.html', {'message': 'Parent not found.'})
+
+        parent = parents.first()  # Select the first parent if multiple exist for now
+
+        # Fetch associated students
+        parent_students = modelsv2.Parentstudent.objects.filter(gid=parent.pid)
+
+        if parent_students.exists():
+            students = modelsv2.Student.objects.filter(ref__in=[ps.stud_id for ps in parent_students])
+            if students.exists():
+                print("Students found:", students)
+            else:
+                print("No students found for this parent.")
+        else:
+            print("No student records associated with this parent.")
+
+   
+
+    except Exception as e:
+        print(f"An unexpected error occurred: {str(e)}")
+        return render(request, 'school/error.html', {'message': 'An unexpected error occurred.'})
+
+    # Return the data to the template
+    return render(request, 'school/student_list.html', {
+        'students': students,      
+        'student_info': student_info,
+       
+    })
+
+
+
+
+# @login_required(login_url='studentlogin')
+# @user_passes_test(is_student)
+# def student_soa(request):
+#     user_email = request.user.email
+#     try:
+        
+#         student_ref = 131 # Change this as needed
+        
+#         parent = modelsv2.Parent.objects.get(email_address=user_email)
+#         parentstudent = modelsv2.Parentstudent.objects.get(gid=parent.pid)
+        
+#         student_ref = parentstudent.stud_id
+            
+#     except Parent.DoesNotExist:
+#         # Handle the case where the parent does not exist
+#         print("Parent not found for the given email.")
+#     except Parentstudent.DoesNotExist:
+#         # Handle the case where the parent-student relationship does not exist
+#         print("No student found for this parent.")
+#     except Parentstudent.MultipleObjectsReturned:
+#         # Handle the case where multiple students are found for the parent
+#         print("Multiple students found for this parent.")
+#     except Exception as e:
+#         # Catch-all for other exceptions
+#         print(f"An unexpected error occurred: {str(e)}")
+    
+      
+#     try:
+#         # Retrieve start and end dates from query parameters or hardcoded for now
+#         start_date = '2024-06-01'
+#         end_date = '2024-12-01'
+
+#         # Retrieve student and register info
+#         student = modelsv2.Student.objects.get(ref=student_ref)
+#         studentsr = modelsv2.Studentregister.objects.filter(stud_id=student_ref).first()
+
+        
+#         student_info = {
+#             'lrn_no': student.lrn_no,
+#             'name': f"{student.last_name}, {student.first_name} {student.middle_name or ''}",
+#             'grade': studentsr.grade_level,
+#             'voucher': student.if_voucher,
+#             'strand': studentsr.strand,
+#         }
+
+#         print("Student Info:", student_info)
+
+#         # Retrieve charges within the date range
+#         queryset = modelsv2.Scharges.objects.filter(stud_id=student_ref, date__range=[start_date, end_date])
+#         total_charges = 0
+#         # Print each record in the QuerySet
+#         if queryset.exists():
+#             print("Records found:")
+#             for charge in queryset:
+#                 print(f"Charge ID: {charge.table_pk}, Amount: {charge.amount}, Date: {charge.date}, Student ID: {charge.stud_id}")
+#                 total_charges += charge.amount
+#         else:
+#             print("No charges found for this student between these dates.")
+#         print("total charges", total_charges)
+        
+#                 # Retrieve charges within the date range
+#         queryset2 = modelsv2.Spayment.objects.filter(stud_id=student_ref, date__range=[start_date, end_date])
+#         total_pd = 0
+#         # Print each record in the QuerySet
+#         if queryset2.exists():
+#             print("Records found:")
+#             for pd in queryset2:
+#                 print(f"Charge ID: {pd.table_pk}, Amount: {pd.amount}, Date: {pd.date}, Student ID: {pd.stud_id}")
+#                 total_pd += pd.amount
+#         else:
+#             print("No charges found for this student between these dates.")
+#         print("total charges", total_pd)
+        
+        
+        
+        
+        
+        
+#         # Retrieve transactions after the start date
+#         charges = modelsv2.Scharges.objects.filter(stud_id=student_ref, date__gte=start_date).annotate(
+#             c_amount=F('amount'),
+#             p_amount=Value(0),
+#             transaction_type=Value('Charge')
+#         )
+
+#         payments = modelsv2.Spayment.objects.filter(stud_id=student_ref, date__gte=start_date).annotate(
+#             c_amount=Value(0),
+#             p_amount=F('amount'),
+#             full_description=Concat('description', Value(' (R:'), F('pk'), Value(')'), output_field=CharField()),
+#             transaction_type=Value('Payment')
+#         )
+
+#         # Combine and order transactions by date
+#         transactions = sorted(
+#             list(charges) + list(payments),
+#             key=lambda t: t.date
+#         )
+#         print(transactions)
+
+#         # Calculate running balance
+#         balance = 0  # Initialize balance; set previous balance if applicable
+#         for transaction in transactions:
+#             balance += transaction.c_amount - transaction.p_amount
+#             transaction.balance = balance
+
+#         # Prepare context data
+#         context = {
+#             'transactions': transactions,
+#             'student_info': student_info,
+#             'previous_balance': balance,  # Set this according to your logic
+#             'net_balance': balance,
+#         }
+
+#         # Render to the template
+#         return render(request, 'school/student_soa.html', context)
+
+#     # except student.DoesNotExist:
+#     #     print(f"Student with ref {student_ref} not found")
+#     #     return render(request, 'school/error.html', {'message': 'Student not found.'})  # Handle error gracefully
+#     # except Studentregister.DoesNotExist:
+#     #     print(f"Student register for student with ref {student_ref} not found")
+#     #     return render(request, 'school/error.html', {'message': 'Student register not found.'})  # Handle error gracefully
+#     except Exception as e:
+#         print(f"An unexpected error occurred: {str(e)}")
+#         return render(request, 'school/error.html', {'message': 'An unexpected error occurred.'})  # Handle unexpected errors
+    
+    
+@login_required(login_url='studentlogin')
+@user_passes_test(is_student)
+def student_grade(request):  # Accept student_ref as a parameter
+    user_email = request.user.email
+    student_ref = request.GET.get('student_ref')  # Get the student_ref from the URL parameters
+    print(student_ref)
+    try:
+     
+        # Get distinct grade levels the student is registered for
         grade_levels = modelsv2.Studentregister.objects.filter(stud_id=student_ref).values('grade_level').distinct()
 
-        # Initialize grades_data for use in context
+        # Initialize data structures
         grades_data = []
         grading_periods = set()
-        # Check if it's an AJAX request to filter grades
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and 'grade_level' in request.GET:
-            selected_grade = request.GET.get('grade_level')
 
-            # Filter grades based on selected grade level (if not "all")
-            if selected_grade != "all":
-                # Make sure to replace 'gradelevel' with the correct field name if necessary
-                #grades = modelsv2.Grade.objects.filter(stud_id=student_ref, gradelevel=selected_grade)  # Assuming subject_code has grade_level
-                 # Perform the query
-                grades = modelsv2.Grade.objects.filter(
-                    stud_id=student_ref,
-                    subject_code__grade_level=selected_grade  # Filtering based on the Subject's grade_level
-                ).select_related('subject_code')
-          
-            else:
-                grades = modelsv2.Grade.objects.filter(stud_id=student_ref)
+        # Check if a grade level is selected via GET request
+        selected_grade = request.GET.get('grade_level')
+        print(selected_grade)
+        # Determine which grades to fetch based on the selected grade level
+        if selected_grade and selected_grade != "all":
+            # Filter grades by the selected grade level
+            grades = modelsv2.Grade.objects.filter(
+                stud_id=student_ref,
+                subject_code__grade_level=selected_grade  # Filter by grade level in the Subject model
+            ).select_related('subject_code')
+        else:
+            # Get all grades for the student if 'all' is selected or no filter is applied
+            grades = modelsv2.Grade.objects.filter(stud_id=student_ref).select_related('subject_code')
 
-            # Prepare grades data for JSON response
-            # grades_data = list(grades.values('subject_code', 'stud_grade', 'gradelevel'))  # Adjust fields as necessary
-            # Prepare grades data with subject names
-            # Initialize an empty list to hold the individual grades
-            grades_data = []
-            # Initialize an empty set to collect unique grading periods
-            
+        # Prepare the grades data
+        for grade in grades:
+            subject = grade.subject_code  # Access the related Subject object directly
+            subject_name = subject.sub_name if subject else "Unknown"  # Handle missing subjects
+            grading_periods.add(grade.grading_period)  # Collect unique grading periods
 
-            # Populate the grades_data list with the original grades
-            for grade in grades:
-                subject_id = grade.subject_code.ref  # Get the actual ID of the subject
-                subject = modelsv2.Subject.objects.filter(ref=subject_id).first()  # Get the subject by ID
-                subject_name = subject.sub_name if subject else "Unknown"  # Handle case where subject is not found
-                
-                grading_periods.add(grade.grading_period)  # Collect unique grading periods
-                
-                grades_data.append({
-                    'subject_code': grade.subject_code.subject_code,  # Include subject code
-                    'subject_name': subject_name,
-                    'stud_grade': grade.stud_grade,
-                    'gradelevel': grade.subject_code.grade_level,
-                    'grading_period': grade.grading_period,
-                })
+            grades_data.append({
+                'subject_code': grade.subject_code.subject_code,  # Include subject code
+                'subject_name': subject_name,
+                'stud_grade': grade.stud_grade,
+                'gradelevel': grade.subject_code.grade_level,
+                'grading_period': grade.grading_period,
+            })
 
-         
+        # Pivot grades data for each subject and grading period
+        pivoted_grades_data = {}
+        for grade in grades_data:
+            subject_name = grade['subject_name']
+            grading_period = grade['grading_period']
+            stud_grade = grade['stud_grade']
 
-            # Initialize an empty dictionary to hold the pivoted grades data
-            pivoted_grades_data = {}
+            if subject_name not in pivoted_grades_data:
+                pivoted_grades_data[subject_name] = {'subject_name': subject_name}
 
-            # Populate the dictionary with the pivoted grades data
-            for grade in grades_data:
-                subject_name = grade['subject_name']
-                grading_period = grade['grading_period']
-                stud_grade = grade['stud_grade']
-                
-                # If the subject is not yet in the dictionary, add it
-                if subject_name not in pivoted_grades_data:
-                    pivoted_grades_data[subject_name] = {'subject_name': subject_name}
-                
-                # Add the grade for the current grading period
-                pivoted_grades_data[subject_name][grading_period] = stud_grade
+            # Add grade for the grading period
+            pivoted_grades_data[subject_name][grading_period] = stud_grade
+        
+        # Convert pivoted data to a list of dictionaries
+        grades_data_list = list(pivoted_grades_data.values())
+        grading_periods_list = sorted(list(grading_periods))  # Sort grading periods for consistency
 
-            # Convert the dictionary to a list of dictionaries
-            grades_data_list = list(pivoted_grades_data.values())
+        # # Check if it's an AJAX request (if it's an AJAX request, return JSON data)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'grades': grades_data_list,
+                'grading_periods': grading_periods_list
+            })
 
-            grading_periods_list = list(grading_periods)
-
-                        
-            
-            
-            print(grades_data_list)
-            return JsonResponse({'grades': grades_data_list, 'grading_periods': list(grading_periods)})
-
-
-        # For the initial page load, get grades without filtering
-        grades = modelsv2.Grade.objects.filter(stud_id=student_ref)
-
-        # Prepare data for rendering the template
+        # Prepare context for the initial page load
         context = {
             'grade_levels': grade_levels,
-            'grades': grades_data,
-            'grading_periods': grading_periods,
-            # This will be empty if the page is loaded for the first time
+            'grades': grades_data_list,
+            'grading_periods': grading_periods_list,
+            'student_ref': student_ref,
         }
 
         return render(request, 'school/student_grade.html', context)
 
+    except modelsv2.Parent.DoesNotExist:
+        return render(request, 'school/error.html', {'message': 'Parent not found.'})
+    except modelsv2.Parentstudent.DoesNotExist:
+        return render(request, 'school/error.html', {'message': 'Student not associated with this parent.'})
     except Exception as e:
         print(f"An unexpected error occurred: {str(e)}")
         return render(request, 'school/error.html', {'message': 'An unexpected error occurred.'})
