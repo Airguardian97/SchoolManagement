@@ -12,7 +12,7 @@
     .note {
       text-align: center;
       height: 80px;
-       background: -webkit-linear-gradient(left, #343a40, #607d8b);
+      background: -webkit-linear-gradient(left, #343a40, #607d8b);
       color: #fff;
       font-weight: bold;
       line-height: 80px;
@@ -37,19 +37,28 @@
       background: #4caf50;
       color: #fff;
     }
+
+    .btnUpload {
+      border: none;
+      border-radius: 1.5rem;
+      padding: 1%;
+      width: 20%;
+      cursor: pointer;
+      background: #007bff;
+      color: #fff;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
   </style>
 
   <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
   <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-
 </head>
 
-<!--
-written By : sumit kumar
--->
-
-<!------ signup page for student by admin(sumit)  ---------->
+<!-- New Admission Form for Student -->
 <form method="post">
   {% csrf_token %}
   <div class="container register-form">
@@ -87,15 +96,28 @@ written By : sumit kumar
             <div class="form-group">
               {% render_field form2.roll class="form-control" placeholder="Roll" %}
             </div>
+            <div class="form-group">
+              {% render_field form1.email class="form-control" placeholder="Email" %}
+            </div>
           </div>
         </div>
         <button type="submit" class="btnSubmit">Submit</button>
       </div>
     </div>
   </div>
-
 </form>
 
+<form method="post" enctype="multipart/form-data" action="{% url 'bulk_signup_view' %}">
+  {% csrf_token %}
+  <div class="form-content">
+    <h3>Bulk Upload Students</h3>
+    <div class="form-group">
+      <label for="csvFile">Choose CSV File:</label>
+      <input type="file" class="form-control-file" id="csvFile" name="csv_file" required>
+    </div>
+    <button type="submit" name="bulk_upload" class="btnUpload">Upload</button>
+  </div>
+</form>
 
 
 {% endblock content %}

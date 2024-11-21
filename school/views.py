@@ -16,6 +16,15 @@ from django.contrib.auth import logout  # Import the logout function
 from django.db import IntegrityError
 import re  # Add this import
 from datetime import datetime
+import pandas as pd
+from openpyxl import load_workbook
+from django.contrib import messages
+
+
+
+
+
+
 
 
 def home_view(request):
@@ -68,6 +77,115 @@ def admin_signup_view(request):
 
 
 
+from django.contrib.auth.models import User, Group
+from openpyxl import load_workbook
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from . import forms
+
+def bulk_signup_view(request):
+    # Initialize the forms for rendering
+    form1 = forms.StudentUserForm()
+    form2 = forms.StudentExtraForm()
+
+    if request.method == 'POST':
+        print("POST request received")
+
+        # Check if the file is in FILES
+        if request.FILES.get('csv_file'):
+            print("File received")
+
+            excel_file = request.FILES['csv_file']
+            if not excel_file.name.endswith(('.xlsx', '.xls')):
+                print(f"Invalid file type received: {excel_file.name}")
+                messages.error(request, "Please upload a valid Excel file.")
+                return redirect('admin-add-student')  # redirect to the same page
+
+            try:
+                # Load the Excel file
+                print(f"Loading Excel file: {excel_file.name}")
+                wb = load_workbook(excel_file)
+                sheet = wb.active
+
+                # Iterate over the rows starting from the second row (to skip header)
+                for row in sheet.iter_rows(min_row=2, values_only=True):
+                    print("Processing row:", row)
+
+                    if None in row or len(row) < 9:
+                        print(f"Invalid data in row: {row}")
+                        raise ValueError(f"Invalid data in row: {row}")
+
+                    first_name, last_name, username, email, password, roll, mobile, student_class, fee = row
+
+                    # Check for existing username or email
+                    if User.objects.filter(username=username).exists():
+                        print(f"Username '{username}' already exists.")
+                        raise ValueError(f"Username '{username}' already exists.")
+                    if User.objects.filter(email=email).exists():
+                        print(f"Email '{email}' already exists.")
+                        raise ValueError(f"Email '{email}' already exists.")
+
+                    # Use StudentUserForm to create the user
+                    form1 = forms.StudentUserForm({
+                        'username': username,
+                        'first_name': first_name,
+                        'last_name': last_name,
+                        'email': email,
+                        'password': password
+                    })
+
+                    # Validate and save the user form
+                    if form1.is_valid():
+                        user = form1.save()
+                        user.set_password(user.password)  # Hash the password
+                        user.save()
+
+                        # Use StudentExtraForm for additional student details
+                        form2 = forms.StudentExtraForm({
+                            'roll': roll,
+                            'mobile': mobile,
+                            'cl': student_class,
+                            'fee': fee,
+                            'status': "1"
+                        })
+                        print(form2)
+                        # Validate and save the extra student form
+                        if form2.is_valid():
+                            f2 = form2.save(commit=False)
+                            f2.user = user  # Link the student extra data with the user
+                            f2.save()
+
+                            # Add the user to the student group
+                            my_student_group, _ = Group.objects.get_or_create(name='STUDENT')
+                            my_student_group.user_set.add(user)
+
+                        else:
+                            print(f"Form2 invalid for row: {row}")
+                            raise ValueError("Invalid student data.")
+
+                    else:
+                        print(f"Form1 invalid for row: {row}")
+                        raise ValueError("Invalid user data.")
+
+                # Success message after processing all rows
+                print("Bulk student registration successful!")
+                messages.success(request, "Bulk student registration successful!")
+                return redirect('afterlogin')
+
+            except Exception as e:
+                print(f"Error occurred: {str(e)}")
+                messages.error(request, f"An error occurred: {str(e)}")
+                return redirect('admin-add-student')
+
+    return render(request, 'school/studentsignup.html', {'form1': form1, 'form2': form2})
+
+
+
+
+
+
+
+
 def student_signup_view(request):
     form1=forms.StudentUserForm()
     form2=forms.StudentExtraForm()
@@ -88,6 +206,58 @@ def student_signup_view(request):
 
         return HttpResponseRedirect('studentlogin')
     return render(request,'school/studentsignup.html',context=mydict)
+
+# def bulk_upload_view(request):
+#     if request.method == "POST":
+#         # Handle form submission
+#         form1 = StudentForm1(request.POST)
+#         form2 = StudentForm2(request.POST)
+#         if form1.is_valid() and form2.is_valid():
+#             form1.save()
+#             form2.save()
+#             messages.success(request, "Student successfully registered!")
+#             return redirect("bulk_upload")
+
+#         # Handle bulk upload
+#         if "excel_file" in request.FILES:
+#             excel_file = request.FILES["excel_file"]
+
+#             try:
+#                 # Open the uploaded Excel file
+#                 wb = load_workbook(excel_file)
+#                 sheet = wb.active
+
+#                 # Iterate through rows (adjust column mapping as needed)
+#                 for row in sheet.iter_rows(min_row=2, values_only=True):  # Skip header row
+#                     first_name, last_name, username, email, password, mobile, student_class, fee, roll = row
+
+#                     # Create Student and Parent objects
+#                     student = Student.objects.create(
+#                         first_name=first_name,
+#                         last_name=last_name,
+#                         username=username,
+#                         email=email,
+#                         password=password,
+#                         student_class=student_class,
+#                         roll=roll,
+#                         fee=fee
+#                     )
+#                     Parent.objects.create(
+#                         student=student,
+#                         mobile=mobile
+#                     )
+
+#                 messages.success(request, "Students uploaded successfully!")
+#             except Exception as e:
+#                 messages.error(request, f"An error occurred: {e}")
+#                 return redirect("bulk_upload")
+    
+#     else:
+#         form1 = StudentForm1()
+#         form2 = StudentForm2()
+
+#     return render(request, "school/admin_bulk_upload.html", {"form1": form1, "form2": form2})
+
 
 
 def teacher_signup_view(request):

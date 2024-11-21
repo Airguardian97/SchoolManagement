@@ -27,6 +27,7 @@ urlpatterns = [
 
     path('adminsignup', views.admin_signup_view),
     path('studentsignup', views.student_signup_view,name='studentsignup'),
+    path('bulk-signup-view', views.bulk_signup_view,name='bulk_signup_view'),
     path('teachersignup', views.teacher_signup_view),
     path('adminlogin', LoginView.as_view(template_name='school/adminlogin.html')),
     path('studentlogin', LoginView.as_view(template_name='school/studentlogin.html')),
