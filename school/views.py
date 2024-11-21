@@ -119,11 +119,11 @@ def bulk_signup_view(request):
 
                     # Check for existing username or email
                     if User.objects.filter(username=username).exists():
-                        print(f"Username '{username}' already exists.")
-                        raise ValueError(f"Username '{username}' already exists.")
+                        print(f"Username '{username}' already exists.Skipping.")
+                        continue  
                     if User.objects.filter(email=email).exists():
-                        print(f"Email '{email}' already exists.")
-                        raise ValueError(f"Email '{email}' already exists.")
+                        print(f"Email '{email}' already exists.Skipping.")
+                        continue  
 
                     # Use StudentUserForm to create the user
                     form1 = forms.StudentUserForm({
