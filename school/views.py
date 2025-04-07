@@ -321,6 +321,8 @@ def afterlogin_view(request):
 
     except Exception as e:
         # Log out the user if an error occurs
+           # Log out the user if an error occurs
+        logout(request)
         
         return HttpResponse(f"An error occurred: {str(e)}. You have been logged out for security reasons.", status=500)
 
