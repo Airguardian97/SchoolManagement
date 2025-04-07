@@ -77,23 +77,26 @@
 
 <div class="container">
     <div class="header">
-        <h1>Ritz School of Integrated Studies Inc.</h1>
-        <h3>Maya, Balasan, Iloilo</h3>
-        <h2>Student List</h2>
+        <h1>ADVENTIST ACADEMY ILOILO INC</h1>
+        <h3>BONGCO, POTOTAN, ILOILO</h3>
+        <h2>Student Financial Statement</h2>
     </div>
 
     <div class="student-list">
-        {% if students %}
-            {% for student in students %}
+        {% if student_info %}
+            {% for info in student_info %}
                 <div class="student-card">
-                     <h4>{{ student.first_name }} {{ student.middle_name }}. {{ student.last_name }}</h4>
-                    <p><strong>Firstname:</strong> {{ student.first_name }}</p>
-                    <p><strong>Lastname:</strong> {{ student.last_name }}</p>
-                    <p><strong>Middlename:</strong> {{ student.middle_name }}</p>
-
+                    <h4>
+                        {{ info.student.first_name }} {{ info.student.middle_name }}. {{ info.student.last_name }}
+                        <p><strong>Grade Level:</strong> {{ info.grade_level }}</p>
+                    </h4>
+                    <p><strong>Firstname:</strong> {{ info.student.first_name }}</p>
+                    <p><strong>Lastname:</strong> {{ info.student.last_name }}</p>
+                    <p><strong>Middlename:</strong> {{ info.student.middle_name }}</p>
+    
                     <div class="actions">
-                        <a href="{% url 'student-soa' %}?student_ref={{ student.ref }}">View SOA</a>
-                        <a href="{% url 'student-grade' %}?student_ref={{ student.ref }}">View Grades</a>
+                        <a href="{% url 'student-soa' %}?student_ref={{ info.student.ref }}">View SOA</a>
+                        <a href="{% url 'student-grade' %}?student_ref={{ info.student.ref }}">View Grades</a>
                     </div>
                 </div>
             {% endfor %}

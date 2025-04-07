@@ -133,10 +133,14 @@ class Grade(models.Model):
 
 
 class Gradelevels(models.Model):
-    grade_level = models.CharField(db_column='grade_Level', primary_key=True, max_length=90)  # Field name made lowercase.
+    ref = models.AutoField(db_column='Ref', primary_key=True)  # Field name made lowercase.
+    grade_level = models.CharField(db_column='grade_Level',  max_length=90)  # Field name made lowercase.
     adviser = models.ForeignKey('Teacher', models.DO_NOTHING, db_column='adviser')
     school_year = models.CharField(db_column='school_Year', max_length=90)  # Field name made lowercase.
     semester = models.CharField(db_column='Semester', max_length=90)  # Field name made lowercase.
+
+    def __str__(self):
+        return self.grade_level  # Return only the grade_level field    
 
     class Meta:
         managed = False
@@ -447,7 +451,8 @@ class Subject(models.Model):
     sub_time = models.CharField(db_column='sub_Time', max_length=90)  # Field name made lowercase.
     sub_room = models.CharField(db_column='sub_Room', max_length=90)  # Field name made lowercase.
     teacher_id = models.CharField(db_column='teacher_ID', max_length=90)  # Field name made lowercase.
-    grade_level = models.CharField(db_column='grade_Level', max_length=90)  # Field name made lowercase.
+    # grade_level = models.CharField(db_column='grade_Level', max_length=90)  # Field name made lowercase.
+    grade_level = models.ForeignKey('Gradelevels', models.DO_NOTHING, db_column='ref') 
     academic_year = models.CharField(db_column='academic_Year', max_length=90)  # Field name made lowercase.
 
     class Meta:

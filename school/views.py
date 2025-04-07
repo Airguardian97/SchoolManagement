@@ -19,11 +19,11 @@ from datetime import datetime
 import pandas as pd
 from openpyxl import load_workbook
 from django.contrib import messages
-
-
-
-
-
+from exam import models as QMODEL
+from students import models as SMODEL
+from django.db.models import Max
+from django.db.models import OuterRef, Subquery
+from django.db.models import Prefetch
 
 
 
@@ -86,7 +86,10 @@ from . import forms
 def bulk_signup_view(request):
     # Initialize the forms for rendering
     form1 = forms.StudentUserForm()
-    form2 = forms.StudentExtraForm()
+    form2 = forms.StudentExtraForm()    
+    
+    
+    
 
     if request.method == 'POST':
         print("POST request received")
@@ -148,7 +151,7 @@ def bulk_signup_view(request):
                             'fee': fee,
                             'status': "1"
                         })
-                        print(form2)
+                        # print(form2)
                         # Validate and save the extra student form
                         if form2.is_valid():
                             f2 = form2.save(commit=False)
@@ -846,22 +849,32 @@ def student_soa(request):
 
         # Get the selected student from the GET request
         student_ref = request.GET.get('student_ref')
-        print(request.GET.get('student_ref'))
+
         # If there's a selected student, filter by the selected student reference
         if student_ref:
             selected_student = students.get(ref=student_ref)  # This will raise an exception if not found
-            print("found", selected_student)
+            print("Selected student:", selected_student)
         else:
             selected_student = students.first()  # Set the first student as default if none selected
 
-        # Now fetch the student information and transactions based on the selected student
+        # Fetch the latest Studentregister data for the selected student
+        latest_register = None
+        if selected_student:
+            latest_register = (
+                SMODEL.Studentregister.objects.filter(stud_id=selected_student.ref)
+                .annotate(latest_date=Max('dor'))  # Replace 'dor' with the correct field name
+                .order_by('-latest_date')
+                .first()
+            )
+            print("Latest register:", latest_register)
+
+        # Prepare student information including grade level from Studentregister
         if selected_student:
             student_info = {
                 'lrn_no': selected_student.lrn_no,
                 'name': f"{selected_student.last_name}, {selected_student.first_name} {selected_student.middle_name or ''}",
-                'grade': "selected_student.grade_level",
+                'grade': latest_register.grade_level if latest_register else "N/A",
                 'voucher': selected_student.if_voucher,
-                # 'strand': selected_student.strand,
             }
 
             # Retrieve charges and payments
@@ -870,16 +883,7 @@ def student_soa(request):
 
             queryset_charges = modelsv2.Scharges.objects.filter(stud_id=selected_student.ref, date__range=[start_date, end_date])
             queryset_payments = modelsv2.Spayment.objects.filter(stud_id=selected_student.ref, date__range=[start_date, end_date])
-            print(queryset_charges)
-            
-            # For each queryset, you can loop through and print individual fields
-            for charge in queryset_charges:
-                print(f"Charge: {charge.description}, Amount: {charge.amount}, Date: {charge.date}")
-                
-            for payment in queryset_payments:
-                print(f"Payment: {payment.description}, Amount: {payment.amount}, Date: {payment.date}")
-            
-            
+
             # Combine and prepare transactions for display
             charges = queryset_charges.annotate(
                 c_amount=F('amount'),
@@ -918,7 +922,7 @@ def student_soa(request):
         'transactions': transactions,
         'net_balance': net_balance,
     })
-    
+
     
     
 @login_required(login_url='studentlogin')
@@ -926,8 +930,7 @@ def student_soa(request):
 def student_list(request):
     user_email = request.user.email
     students = []
-    selected_student = None
-    student_info = {}
+    student_info = []
     transactions = []
     net_balance = 0.0
 
@@ -940,31 +943,68 @@ def student_list(request):
             return render(request, 'school/error.html', {'message': 'Parent not found.'})
 
         parent = parents.first()  # Select the first parent if multiple exist for now
-
+        
         # Fetch associated students
         parent_students = modelsv2.Parentstudent.objects.filter(gid=parent.pid)
-
+        print(parent_students)
         if parent_students.exists():
             students = modelsv2.Student.objects.filter(ref__in=[ps.stud_id for ps in parent_students])
             if students.exists():
+                student_ids = students.values_list('ref', flat=True)
+
                 print("Students found:", students)
+
+                # Subquery for the latest Studentregister entry
+                from django.db.models import OuterRef, Subquery
+
+                latest_register_subquery = SMODEL.Studentregister.objects.filter(
+                    stud_id=OuterRef('ref')
+                ).order_by('-dor').values('pk')[:1]
+
+                # Annotate the latest Studentregister entry
+                students = students.annotate(latest_register_id=Subquery(latest_register_subquery))
+
+                # Fetch additional Studentregister details
+                student_info = [
+                    {
+                        'student': student,
+                        'latest_register': SMODEL.Studentregister.objects.filter(pk=student.latest_register_id).first(),
+                    }
+                    for student in students
+                ]
+
+                # Process student_info to include grade level
+                for info in student_info:
+                    student_register = info['latest_register']
+                    if student_register:
+                        # Get the grade_level using the 'grade_level' field in Gradelevels
+                        grade_level_obj = SMODEL.Gradelevels.objects.filter(ref=student_register.grade_level).first()
+                        if grade_level_obj:
+                            info['grade_level'] = grade_level_obj.grade_level  # Use the grade_level name from Gradelevels model
+                        else:
+                            info['grade_level'] = "N/A"  # Default if no matching grade level found
+                    else:
+                        info['grade_level'] = "N/A"  # Default if no register found
+
+                if student_info:
+                    print("Student info with latest registers and grade levels:", student_info)
+                else:
+                    print("No StudentRegister records found for these students.")
             else:
                 print("No students found for this parent.")
         else:
             print("No student records associated with this parent.")
-
-   
-
     except Exception as e:
         print(f"An unexpected error occurred: {str(e)}")
         return render(request, 'school/error.html', {'message': 'An unexpected error occurred.'})
 
     # Return the data to the template
     return render(request, 'school/student_list.html', {
-        'students': students,      
+        'students': students,
         'student_info': student_info,
-       
     })
+
+
 
 
 
@@ -1105,7 +1145,13 @@ def student_grade(request):  # Accept student_ref as a parameter
     try:
      
         # Get distinct grade levels the student is registered for
-        grade_levels = modelsv2.Studentregister.objects.filter(stud_id=student_ref).values('grade_level').distinct()
+        # grade_levels = modelsv2.Studentregister.objects.filter(stud_id=student_ref).values('grade_level').distinct()
+        grade_levels = SMODEL.Studentregister.objects.filter(stud_id=student_ref)
+        grade_level_objects = []
+        for grade_level in grade_levels:
+            grade_level_obj = SMODEL.Gradelevels.objects.get(ref=grade_level.grade_level)
+            grade_level_objects.append(grade_level_obj)
+            print(grade_level_obj.grade_level)
 
         # Initialize data structures
         grades_data = []
@@ -1117,9 +1163,9 @@ def student_grade(request):  # Accept student_ref as a parameter
         # Determine which grades to fetch based on the selected grade level
         if selected_grade and selected_grade != "all":
             # Filter grades by the selected grade level
-            grades = modelsv2.Grade.objects.filter(
+            grades = SMODEL.Grade.objects.filter(
                 stud_id=student_ref,
-                subject_code__grade_level=selected_grade  # Filter by grade level in the Subject model
+                subject_code__grade_level__ref__grade_level=selected_grade  # Filter by grade level in the Subject model
             ).select_related('subject_code')
         else:
             # Get all grades for the student if 'all' is selected or no filter is applied
@@ -1165,7 +1211,7 @@ def student_grade(request):  # Accept student_ref as a parameter
 
         # Prepare context for the initial page load
         context = {
-            'grade_levels': grade_levels,
+            'grade_levels': grade_level_objects,
             'grades': grades_data_list,
             'grading_periods': grading_periods_list,
             'student_ref': student_ref,
@@ -1432,3 +1478,128 @@ def parse_and_save(statement):
                 print(f"Validation failed for table_pk: {table_pk}, stud_id: {stud_id}, date: {date}, description: {description}, amount: {amount}, atm_balance: {atm_balance}")
     else:
         print("Statement does not match any known table pattern.")
+        
+        
+        
+        
+        
+
+# @login_required(login_url='studentlogin')
+# @user_passes_test(is_student)
+# def student_dashboard_view(request):
+#     dict={
+    
+#     'total_course':QMODEL.Course.objects.all().count(),
+#     'total_question':QMODEL.Question.objects.all().count(),
+#     }
+#     return render(request,'/student_dashboard.html',context=dict)
+
+# @login_required(login_url='studentlogin')
+# @user_passes_test(is_student)
+# def student_exam_view(request):
+#     courses=QMODEL.Course.objects.all()
+#     return render(request,'student/student_exam.html',{'courses':courses})
+
+
+@login_required(login_url='studentlogin')
+@user_passes_test(is_student)
+def student_exam_view(request):
+    
+    student_ref = '131'  # Get the student_ref from the URL parameters
+    print(student_ref)    
+    # Get distinct grade levels the student is registered for
+    grade_levels = modelsv2.Studentregister.objects.filter(stud_id=student_ref).values('grade_level').distinct()
+    # Filter courses based on the student's grade level
+        # If multiple grade levels exist, you can choose how to handle it (e.g., the first grade level or filter by all)
+    if grade_levels:
+        grade_level = grade_levels[0]['grade_level']  # Choose the first grade level (if there are multiple)
+        print(grade_level)
+        # Filter courses based on the student's grade level
+        courses = QMODEL.Course.objects.filter(grade_level=grade_level)
+    else:
+        # No grade level found for student
+        courses = []
+
+    # Pass the filtered courses to the template
+    return render(request, 'student/student_exam.html', {'courses': courses})
+
+
+
+@login_required(login_url='studentlogin')
+@user_passes_test(is_student)
+def take_exam_view(request,pk):
+    student_ref = '131'  # Get the student_ref from the URL parameters
+    print(student_ref)    
+    
+    # Get distinct grade levels the student is registered for
+    grade_levels = modelsv2.Studentregister.objects.filter(stud_id=student_ref).values('grade_level').distinct()
+    grade_level = grade_levels[0]['grade_level']
+    # Filter courses based on the student's grade level
+    course=QMODEL.Course.objects.get(id=pk,grade_level=grade_level)
+    total_questions=QMODEL.Question.objects.all().filter(course=course).count()
+    questions=QMODEL.Question.objects.all().filter(course=course)
+    total_marks=0
+    for q in questions:
+        total_marks=total_marks + q.marks
+    
+    return render(request,'student/take_exam.html',{'course':course,'total_questions':total_questions,'total_marks':total_marks})
+
+@login_required(login_url='studentlogin')
+@user_passes_test(is_student)
+def start_exam_view(request,pk):
+    course=QMODEL.Course.objects.get(id=pk)
+    questions=QMODEL.Question.objects.all().filter(course=course)
+    if request.method=='POST':
+        pass
+    response= render(request,'student/start_exam.html',{'course':course,'questions':questions})
+    response.set_cookie('course_id',course.id)
+    return response
+
+
+@login_required(login_url='studentlogin')
+@user_passes_test(is_student)
+def calculate_marks_view(request):
+    if request.COOKIES.get('course_id') is not None:
+        course_id = request.COOKIES.get('course_id')
+        course=QMODEL.Course.objects.get(id=course_id)
+        
+        total_marks=0
+        questions=QMODEL.Question.objects.all().filter(course=course)
+        for i in range(len(questions)):
+            
+            selected_ans = request.COOKIES.get(str(i+1))
+            actual_answer = questions[i].answer
+            if selected_ans == actual_answer:
+                total_marks = total_marks + questions[i].marks
+        student = SMODEL.Student.objects.get(ref=request.user.id)
+        result = QMODEL.Result()
+        result.marks=total_marks
+        result.exam=course
+        result.student=student
+        result.save()
+
+        return HttpResponseRedirect('view-result')
+
+
+
+@login_required(login_url='studentlogin')
+@user_passes_test(is_student)
+def view_result_view(request):
+    courses=QMODEL.Course.objects.all()
+    return render(request,'student/view_result.html',{'courses':courses})
+    
+
+@login_required(login_url='studentlogin')
+@user_passes_test(is_student)
+def check_marks_view(request,pk):
+    course=QMODEL.Course.objects.get(id=pk)
+    student = models.Student.objects.get(user_id=request.user.id)
+    results= QMODEL.Result.objects.all().filter(exam=course).filter(student=student)
+    return render(request,'student/check_marks.html',{'results':results})
+
+@login_required(login_url='studentlogin')
+@user_passes_test(is_student)
+def student_marks_view(request):
+    courses=QMODEL.Course.objects.all()
+    return render(request,'student/student_marks.html',{'courses':courses})
+  

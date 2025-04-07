@@ -1,73 +1,111 @@
 <!DOCTYPE html>
 {% load static %}
-<html lang="en" dir="ltr">
+<html lang="en">
 
 <head>
-  <meta charset="utf-8">
-  <title></title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School Management System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+    }
 
-  <style media="screen">
     .jumbotron {
-      margin-top: 0px;
-      margin-bottom: 0px;
-      background-image: url('{% static "images/EmpClass.jpg" %}');
-      background-size: cover;
-      background-repeat: no-repeat;
+      margin: 0;
+      background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+        url('{% static "images/EmpClass.jpg" %}') center/cover no-repeat;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
     }
 
     .jumbotron h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    }
+
+    .jumbotron p a {
+      padding: 10px 30px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: white;
+      background-color: #d9534f;
+      border: none;
+      border-radius: 5px;
+      transition: all 0.3s ease-in-out;
+      text-decoration: none;
+    }
+
+    .jumbotron p a:hover {
+      background-color: #c9302c;
+      transform: scale(1.1);
+    }
+
+    .card-deck {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 50px auto;
+    }
+
+    .card {
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease-in-out;
+    }
+
+    .card:hover {
+      transform: scale(1.05);
+    }
+
+    footer {
+      background: #343a40;
+      color: white;
+      padding: 20px;
       text-align: center;
     }
 
-    .alert {
-      margin: 0px;
+    footer a {
+      color: #f8f9fa;
+      text-decoration: none;
+      margin: 0 10px;
     }
 
-
-
-    .glow {
-      font-size: 90px;
-      color: #ffffff;
-      text-align: center;
-      -webkit-animation: glow 1s ease-in-out infinite alternate;
-      -moz-animation: glow 1s ease-in-out infinite alternate;
-      animation: glow 1s ease-in-out infinite alternate;
+    footer a:hover {
+      text-decoration: underline;
     }
-
-    
   </style>
-
 </head>
 
 <body>
   {% include "school/navbar.html" %}
-  <br>
-  <br>
-  <div class="jumbotron" style="margin-bottom: 0px;margin-top: 0px;">
-    <br>
-    {% comment %} <h1 class="display-4 glow"><b>School Management System</b></h1> {% endcomment %}
 
-    <br><br>
-    {% comment %} <h3 class="text-center" style="color:white;">Built using Python Django</h3> {% endcomment %}
-    <br><br><br><br><br>
-    <p class="lead">
-      <a class="btn btn-danger btn-lg" href="/studentsignup" role="button">Sign Up as Student</a>
+  <div class="jumbotron">
+    <h1>Welcome to the School Management System</h1>
+    <p>
+      <a href="/studentsignup" class="btn btn-lg">Sign Up as Student</a>
     </p>
-    <br><br>
   </div>
 
-  <br>
-  <br>
-  <br><br>
+  <div class="container my-5">
+    {% include "school/admin_teacher_student_card.html" %}
+  </div>
 
-  {% include "school/admin_teacher_student_card.html" %}
+  <footer>
+    <p>&copy; 2024 School Management System. All Rights Reserved.</p>
+    <p>
+      <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a>
+    </p>
+  </footer>
 
-  <br><br>
-  <br>
-  <br>
-  <br>
-  <br>
-  {% include "school/footer.html" %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

@@ -3,13 +3,14 @@
 
 <head>
   <meta charset="utf-8">
-
-
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-  <link href="http://netdna.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" rel="stylesheet">
+  <title>Dashboard Cards</title>
+  
+  <!-- Latest Bootstrap and Font Awesome -->
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
-  <style type="text/css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  
+  <style>
     a:link {
       text-decoration: none;
     }
@@ -19,38 +20,39 @@
     }
 
     .bg-c-blue {
-      background: linear-gradient(45deg, #4099ff,#597583);
+      background: linear-gradient(45deg, #4099ff, #597583);
     }
 
     .bg-c-green {
-      background: linear-gradient(45deg, #2ed8b6,#597583);
+      background: linear-gradient(45deg, #2ed8b6, #597583);
     }
 
     .bg-c-yellow {
-      background: linear-gradient(45deg, #FFB64D,#597583);
+      background: linear-gradient(45deg, #FFB64D, #597583);
     }
 
     .bg-c-pink {
       background: linear-gradient(45deg, #FF5370, #597583);
     }
 
-
     .card {
-      border-radius: 5px;
-      -webkit-box-shadow: 0 1px 2.94px 0.06px rgba(4, 26, 55, 0.16);
-      box-shadow: 0 1px 2.94px 0.06px rgba(4, 26, 55, 0.16);
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       border: none;
       margin-bottom: 30px;
-      -webkit-transition: all 0.3s ease-in-out;
-      transition: all 0.3s ease-in-out;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
     }
 
     .card .card-block {
-      padding: 25px;
+      padding: 20px;
     }
 
     .order-card i {
-      font-size: 26px;
+      font-size: 30px;
     }
 
     .f-left {
@@ -64,65 +66,66 @@
 </head>
 
 <body>
-  <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
-  <div class="container">
+  <div class="container py-4">
     <div class="row">
-      <div class="col-md-4 col-xl-3">
+      
+      <!-- Name Card -->
+      <div class="col-md-6 col-lg-3">
         <div class="card bg-c-blue order-card">
           <div class="card-block">
             <h6 class="m-b-20">Name</h6>
-            <h2 class="text-right"><i class="fas fa-user-tie f-left"></i></h2>
-            <p><span style="font-size: 20px;">{{request.user.first_name}}</span></p>
+            <div class="text-right">
+              <i class="fas fa-user-tie f-left" aria-hidden="true"></i>
+              <span style="font-size: 20px;">{{ request.user.first_name }}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4 col-xl-3">
+      <!-- Contact Card -->
+      <div class="col-md-6 col-lg-3">
         <div class="card bg-c-green order-card">
           <div class="card-block">
             <h6 class="m-b-20">Contact</h6>
-            <h2 class="text-right"><i class="fas fa-mobile-alt f-left"></i></h2>
-            <p><span style="font-size: 20px;">{{mobile}}</span></p>
-
+            <div class="text-right">
+              <i class="fas fa-mobile-alt f-left" aria-hidden="true"></i>
+              <span style="font-size: 20px;">{{ mobile }}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4 col-xl-3">
+      <!-- Join Date Card -->
+      <div class="col-md-6 col-lg-3">
         <div class="card bg-c-yellow order-card">
           <div class="card-block">
             <h6 class="m-b-20">Join Date</h6>
-            <h2 class="text-right"><i class="fas fa-calendar-alt f-left"></i></h2>
-            <p><span style="font-size: 20px;">{{date}}</span></p>
+            <div class="text-right">
+              <i class="fas fa-calendar-alt f-left" aria-hidden="true"></i>
+              <span style="font-size: 20px;">{{ date }}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4 col-xl-3">
+      <!-- Salary Card -->
+      <div class="col-md-6 col-lg-3">
         <div class="card bg-c-pink order-card">
           <div class="card-block">
             <h6 class="m-b-20">Salary</h6>
-            <h2 class="text-right"><i class="fas fa-dollar f-left"></i></h2>
-            <p><span style="font-size: 20px;">{{salary}}</span></p>
+            <div class="text-right">
+              <i class="fas fa-dollar-sign f-left" aria-hidden="true"></i>
+              <span style="font-size: 20px;">{{ salary }}</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-
-
-
-
-
-
-
-
-
-  <script src="http://netdna.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js"></script>
-  <script type="text/javascript">
-
-  </script>
+  <!-- Latest JavaScript -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
 </body>
 
 </html>

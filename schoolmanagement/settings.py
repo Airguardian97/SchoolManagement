@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'school',
     'widget_tweaks',
     'students',
+    'exam',
+    'teacher',
 ]
 
 MIDDLEWARE = [
@@ -94,8 +96,6 @@ DATABASES = {
         'HOST': 'localhost', # This points to your local MySQL server in XAMPP
         'PORT': '3306',      # Default MySQL port in XAMPP
     }
-
-
 }
 
 # DATABASES = {

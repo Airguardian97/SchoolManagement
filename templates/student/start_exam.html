@@ -1,0 +1,114 @@
+{% extends 'school/studentbase.html' %} {% block content %} {%load static%}
+
+<head>
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+    <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+
+
+</head>
+
+
+<div class="jumbotron my-4">
+
+    <form class="form" autocomplete="off" action="/calculate-marks" method="POST">
+        {% csrf_token %}
+        <h2 style="text-align: center;">Course: {{ course.course_name }}</h2>
+        {% for q in questions %}
+            <div class="d-flex w-100 align-items-center">
+                <div class="col-auto flex-shrink-1 flex-grow-1">
+                    <h3>{{ forloop.counter }}. {{ q.question }}</h3>
+                </div>
+                <div class="col-auto">
+                    <h4 style="text-align: right;">[{{ q.marks }} Marks]</h4>
+                </div>
+            </div>
+            <div class="form-check mx-4 d-flex align-items-center">
+                <input class="form-check-input" type="radio" name="{{ forloop.counter }}" id="option1_{{ forloop.counter }}" value="Option1">
+                <label class="form-check-label ml-3" for="option1_{{ forloop.counter }}">
+                    {{ q.option1 }}
+                </label>
+            </div>
+    
+            <div class="form-check mx-4 d-flex align-items-center">
+                <input class="form-check-input" type="radio" name="{{ forloop.counter }}" id="option2_{{ forloop.counter }}" value="Option2">
+                <label class="form-check-label ml-3" for="option2_{{ forloop.counter }}">
+                    {{ q.option2 }}
+                </label>
+            </div>
+    
+            <div class="form-check mx-4 d-flex align-items-center">
+                <input class="form-check-input" type="radio" name="{{ forloop.counter }}" id="option3_{{ forloop.counter }}" value="Option3">
+                <label class="form-check-label ml-3" for="option3_{{ forloop.counter }}">
+                    {{ q.option3 }}
+                </label>
+            </div>
+    
+            <div class="form-check mx-4 d-flex align-items-center">
+                <input class="form-check-input" type="radio" name="{{ forloop.counter }}" id="option4_{{ forloop.counter }}" value="Option4">
+                <label class="form-check-label ml-3" for="option4_{{ forloop.counter }}">
+                    {{ q.option4 }}
+                </label>
+            </div>
+        {% endfor %}
+        <input class="btn btn-primary btn-lg" style="border-radius: 0%;" type="submit" value="Submit Answers">
+    </form>
+    
+    
+</div>
+
+<script>
+    function saveAns() {
+
+        var ele = document.getElementsByTagName('input');
+        for (i = 0; i < ele.length; i++) {
+            if (ele[i].type = "radio") {
+                if (ele[i].checked) {
+                    setCookie(ele[i].name, ele[i].value, 3)
+                }
+            }
+        }
+
+    }
+
+    function setCookie(cname, cvalue, exdays) {
+        var d = new Date();
+        d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+        var expires = "expires=" + d.toUTCString();
+        document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    }
+
+    var csrftoken = getCookie('csrftoken');
+
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie != '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+$.ajax({
+    url: '/calculate-marks',
+    type: 'POST',
+    headers: {
+        'X-CSRFToken': csrftoken
+    },
+    data: {
+        // Your form data
+    },
+    success: function(response) {
+        console.log(response);
+    }
+});
+
+</script>
+
+<br><br><br><br><br><br> {% endblock content %}

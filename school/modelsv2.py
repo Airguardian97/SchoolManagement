@@ -134,6 +134,7 @@ class Grade(models.Model):
 
 
 class Gradelevels(models.Model):
+    
     grade_level = models.CharField(db_column='grade_Level', primary_key=True, max_length=90)  # Field name made lowercase.
     adviser = models.ForeignKey('Teacher', models.DO_NOTHING, db_column='adviser')
     school_year = models.CharField(db_column='school_Year', max_length=90)  # Field name made lowercase.

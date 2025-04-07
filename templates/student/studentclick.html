@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <style media="screen">
+    /* General Body Styling */
+    body {
+      background-color: #f8f9fa;
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Jumbotron Styling */
+    .jumbotron {
+      margin-top: 0px;
+      margin-bottom: 0px;
+      background-image: url('https://images.unsplash.com/photo-1573495612899-13c9c9beef72'); /* Background Image */
+      background-size: cover;
+      background-position: center;
+      height: 100vh;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 0;
+    }
+
+    /* Jumbotron Text Styling */
+    .jumbotron h1 {
+      font-size: 3rem;
+      font-weight: bold;
+    }
+
+    .jumbotron p {
+      font-size: 1.25rem;
+      font-weight: 500;
+    }
+
+    .btn {
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 12px 30px;
+      border-radius: 25px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+      border: none;
+    }
+
+    .btn-primary {
+      background-color: #007bff;
+      border: none;
+    }
+
+    .btn:hover {
+      opacity: 0.8;
+      transform: translateY(-2px);
+    }
+
+    /* Footer Styling */
+    footer {
+      background-color: #343a40;
+      color: white;
+      padding: 10px 0;
+      text-align: center;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .jumbotron h1 {
+        font-size: 2.5rem;
+      }
+
+      .jumbotron p {
+        font-size: 1rem;
+      }
+
+      .btn {
+        width: 100%;
+        margin: 5px 0;
+      }
+    }
+  </style>
+
+</head>
+
+<body>
+
+  {% include "exam/navbar.html" %}
+
+  <div class="jumbotron">
+    <div>
+      <h1 class="display-4">Hello Student,</h1>
+      <p class="lead">and Welcome to the Online Examination System</p>
+      <hr class="my-4">
+      <p>Select any of the options below to access the system</p>
+      <p class="lead">
+        <a class="btn btn-secondary" href="studentsignup" role="button">Create Your Account</a>
+        <a class="btn btn-primary" href="studentlogin" role="button">Login Now</a>
+      </p>
+    </div>
+  </div>
+
+  {% include "exam/footer.html" %}
+  
+</body>
+
+</html>

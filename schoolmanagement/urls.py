@@ -4,7 +4,7 @@ written by fb.com/sumit.luv
 
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path,include
 from school import views
 from django.contrib.auth.views import LoginView,LogoutView
 # from django.conf import settings
@@ -19,7 +19,9 @@ urlpatterns = [
   
     path('admin/', admin.site.urls),
     path('',views.home_view,name=''),
-
+    path('teacher/',include('teacher.urls')),
+    
+    
     path('adminclick', views.adminclick_view),
     path('teacherclick', views.teacherclick_view),
     path('studentclick', views.studentclick_view),
@@ -88,6 +90,17 @@ urlpatterns = [
     path('student-list/', views.student_list, name='student-list'),
     path('student-soa/', views.student_soa, name='student-soa'),
     path('student-grade/', views.student_grade, name='student-grade'),
+    
+    path('student-exam', views.student_exam_view,name='student-exam'),
+    path('take-exam/<int:pk>', views.take_exam_view,name='take-exam'),
+    path('start-exam/<int:pk>', views.start_exam_view,name='start-exam'),
+
+    path('calculate-marks', views.calculate_marks_view,name='calculate-marks'),
+    path('view-result', views.view_result_view,name='view-result'),
+    path('check-marks/<int:pk>', views.check_marks_view,name='check-marks'),
+    path('student-marks', views.student_marks_view,name='student-marks'),
+        
+    
 
     path('aboutus', views.aboutus_view),
     path('contactus', views.contactus_view),
