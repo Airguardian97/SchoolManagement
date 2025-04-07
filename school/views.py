@@ -316,7 +316,7 @@ def afterlogin_view(request):
                     return redirect('student-dashboard')
                 else:
                     return render(request, 'school/student_wait_for_approval.html')
-            logout(request)            
+            logout(request)          
             return HttpResponse("Error: Unauthorized access. Please contact support.", status=403)
 
     except Exception as e:
