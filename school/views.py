@@ -734,10 +734,20 @@ def teacher_take_attendance_view(request, cl):
     # Fetch the Studentregister records where sr_id is in the enrolled_ids list
     students_register = modelsv2.Studentregister.objects.filter(sr_id__in=enrolled_ids)
     print(students_register)
+    
     # Fetch the Student records where studentid is in the list of students from Studentregister
     students = modelsv2.Student.objects.filter(ref__in=students_register.values_list('stud_id', flat=True))
     print(students)
-    
+
+    # Ensure that there are students before proceeding
+    if not students:
+        # Handle case when there are no students in the class
+        print("No students found for this class")
+        return render(request, 'school/teacher_take_attendance.html', {
+            'message': 'No students found for this class.',
+            'cl': cl
+        })
+
     aform = forms.AttendanceForm()
 
     if request.method == 'POST':
@@ -746,6 +756,16 @@ def teacher_take_attendance_view(request, cl):
             Attendances = request.POST.getlist('present_status')
             date = form.cleaned_data['date']
             
+            # Ensure that the number of attendance entries matches the number of students
+            if len(Attendances) != len(students):
+                print(f"Attendance count mismatch. Students: {len(students)}, Attendance entries: {len(Attendances)}")
+                return render(request, 'school/teacher_take_attendance.html', {
+                    'form': form,
+                    'students': students,
+                    'message': 'The number of attendance entries does not match the number of students.'
+                })
+
+            # Save attendance records
             for i in range(len(Attendances)):
                 AttendanceModel = models.Attendance()
                 AttendanceModel.cl = cl
@@ -757,11 +777,15 @@ def teacher_take_attendance_view(request, cl):
             return redirect('teacher-attendance')
         else:
             print('Form invalid')
+            # Log the form errors for debugging purposes
+            print(form.errors)
 
     return render(request, 'school/teacher_take_attendance.html', {
         'students': students,
-        'aform': aform
+        'aform': aform,
+        'cl': cl
     })
+
 
 
 @login_required(login_url='teacherlogin')
