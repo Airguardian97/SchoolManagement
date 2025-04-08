@@ -57,7 +57,7 @@ written By : sumit kumar
           {% csrf_token %}
           {%for student in students%}
           <tr>
-            <td>{{student.get_name}}</td>
+            <td>{{ student.first_name }} {{ student.middle_name }} {{ student.last_name }}</td>
             <td>{{aform.present_status}}</td>
           </tr>
           {%endfor%}

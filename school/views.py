@@ -715,48 +715,94 @@ def teacher_dashboard_view(request):
 @login_required(login_url='teacherlogin')
 @user_passes_test(is_teacher)
 def teacher_attendance_view(request):
-    return render(request,'school/teacher_attendance.html')
+    teacher_id = str(request.user.id)
+    teacher_id = "NT202401"
+    subjects = modelsv2.Subject.objects.filter(teacher_id=teacher_id)
+    print(subjects)
+    return render(request, 'school/teacher_attendance.html', {
+        'subjects': subjects
+    })
+
 
 
 @login_required(login_url='teacherlogin')
 @user_passes_test(is_teacher)
-def teacher_take_attendance_view(request,cl):
-    students=models.StudentExtra.objects.all().filter(cl=cl)
-    aform=forms.AttendanceForm()
-    if request.method=='POST':
-        form=forms.AttendanceForm(request.POST)
+def teacher_take_attendance_view(request, cl):
+    # Fetch enrolled sr_id values from the Studentenrollsubject model
+    enrolled_ids = modelsv2.Studentenrollsubject.objects.filter(subject_code=cl).values_list('sr_id', flat=True)
+
+    # Fetch the Studentregister records where sr_id is in the enrolled_ids list
+    students_register = modelsv2.Studentregister.objects.filter(sr_id__in=enrolled_ids)
+    print(students_register)
+    # Fetch the Student records where studentid is in the list of students from Studentregister
+    students = modelsv2.Student.objects.filter(ref__in=students_register.values_list('stud_id', flat=True))
+    print(students)
+    
+    aform = forms.AttendanceForm()
+
+    if request.method == 'POST':
+        form = forms.AttendanceForm(request.POST)
         if form.is_valid():
-            Attendances=request.POST.getlist('present_status')
-            date=form.cleaned_data['date']
+            Attendances = request.POST.getlist('present_status')
+            date = form.cleaned_data['date']
+            
             for i in range(len(Attendances)):
-                AttendanceModel=models.Attendance()
-                AttendanceModel.cl=cl
-                AttendanceModel.date=date
-                AttendanceModel.present_status=Attendances[i]
-                AttendanceModel.roll=students[i].roll
+                AttendanceModel = models.Attendance()
+                AttendanceModel.cl = cl
+                AttendanceModel.date = date
+                AttendanceModel.present_status = Attendances[i]
+                AttendanceModel.roll = students[i].ref  # or use another unique identifier if needed
                 AttendanceModel.save()
+
             return redirect('teacher-attendance')
         else:
-            print('form invalid')
-    return render(request,'school/teacher_take_attendance.html',{'students':students,'aform':aform})
+            print('Form invalid')
 
+    return render(request, 'school/teacher_take_attendance.html', {
+        'students': students,
+        'aform': aform
+    })
 
 
 @login_required(login_url='teacherlogin')
 @user_passes_test(is_teacher)
-def teacher_view_attendance_view(request,cl):
-    form=forms.AskDateForm()
-    if request.method=='POST':
-        form=forms.AskDateForm(request.POST)
+def teacher_view_attendance_view(request, cl):
+    form = forms.AskDateForm()  # Initialize the form
+    if request.method == 'POST':
+        form = forms.AskDateForm(request.POST)
         if form.is_valid():
-            date=form.cleaned_data['date']
-            attendancedata=models.Attendance.objects.all().filter(date=date,cl=cl)
-            studentdata=models.StudentExtra.objects.all().filter(cl=cl)
-            mylist=zip(attendancedata,studentdata)
-            return render(request,'school/teacher_view_attendance_page.html',{'cl':cl,'mylist':mylist,'date':date})
+            # Get the date from the form
+            date = form.cleaned_data['date']
+            
+            # Fetch the SR_ID values for the enrolled students in the given class (cl)
+            enrolled_ids = modelsv2.Studentenrollsubject.objects.filter(subject_code=cl).values_list('sr_id', flat=True)
+            
+            # Fetch the Studentregister records for these enrolled students
+            students_register = modelsv2.Studentregister.objects.filter(sr_id__in=enrolled_ids)
+            
+            # Fetch the Student records based on the studentid from Studentregister
+            students = modelsv2.Student.objects.filter(ref__in=students_register.values_list('stud_id', flat=True))
+            print(students)
+            # Fetch the attendance data for the specified date and class
+            attendancedata = models.Attendance.objects.filter(date=date, cl=cl)
+            
+            # Combine attendance data and student data using zip
+            mylist = zip(attendancedata, students)
+
+            # Render the template with the required context
+            return render(request, 'school/teacher_view_attendance_page.html', {
+                'cl': cl,
+                'mylist': mylist,
+                'date': date
+            })
         else:
-            print('form invalid')
-    return render(request,'school/teacher_view_attendance_ask_date.html',{'cl':cl,'form':form})
+            print('Form is invalid')
+    
+    # Render the template for asking the date if the request is GET or the form is invalid
+    return render(request, 'school/teacher_view_attendance_ask_date.html', {
+        'cl': cl,
+        'form': form
+    })
 
 
 
