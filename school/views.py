@@ -764,7 +764,7 @@ def teacher_take_attendance_view(request, cl):
                     'students': students,
                     'message': 'The number of attendance entries does not match the number of students.'
                 })
-
+            
             # Save attendance records
             for i in range(len(Attendances)):
                 AttendanceModel = models.Attendance()
@@ -772,6 +772,7 @@ def teacher_take_attendance_view(request, cl):
                 AttendanceModel.date = date
                 AttendanceModel.present_status = Attendances[i]
                 AttendanceModel.roll = students[i].ref  # or use another unique identifier if needed
+                AttendanceModel.subject_code = cl  # Set the subject_code field
                 AttendanceModel.save()
 
             return redirect('teacher-attendance')
@@ -785,6 +786,7 @@ def teacher_take_attendance_view(request, cl):
         'aform': aform,
         'cl': cl
     })
+
 
 
 
