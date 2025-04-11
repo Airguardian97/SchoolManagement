@@ -179,10 +179,9 @@
     <div class="left_area">
       <h3>Online Exam</h3>
     </div>
-    <form method="POST" action="/logout">
-      {% csrf_token %}
-      <button type="submit" class="logout_btn">Logout</button>
-    </form>
+    <div class="right_area">
+      <a href="/logout" class="logout_btn">Logout</a>
+    </div>
   </header>
   <!--header area end-->
   <!--sidebar start-->

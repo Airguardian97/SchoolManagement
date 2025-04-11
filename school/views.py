@@ -736,11 +736,11 @@ def teacher_take_attendance_view(request, cl):
 
     # Fetch the Studentregister records where sr_id is in the enrolled_ids list
     students_register = modelsv2.Studentregister.objects.filter(sr_id__in=enrolled_ids)
-    print(students_register)
+   
     
     # Fetch the Student records where studentid is in the list of students from Studentregister
     students = modelsv2.Student.objects.filter(ref__in=students_register.values_list('stud_id', flat=True))
-    print(students)
+
 
     # Ensure that there are students before proceeding
     if not students:
@@ -770,17 +770,28 @@ def teacher_take_attendance_view(request, cl):
             
             # Save attendance records
             for i in range(len(Attendances)):
+                student = students[i]
+    
                 AttendanceModel = models.Attendance()
                 AttendanceModel.cl = cl
                 AttendanceModel.date = date
                 AttendanceModel.present_status = Attendances[i]
-                AttendanceModel.roll = students[i].ref  # or use another unique identifier if needed
-                AttendanceModel.subject_code = cl  # Set the subject_code field
+                AttendanceModel.roll = student.ref
+                AttendanceModel.subject_code = cl
                 AttendanceModel.save()
                 
-                        # After saving, send TCP message
-                send_tcp_message_to_vb_server("0987654321", "Attendance saved successfully.")
+                first_name = student.first_name
+                last_name = student.last_name
+                subject_name = "TEST"  # Replace with actual subject if available
 
+                status = Attendances[i]
+
+                message = f"{first_name} {last_name} is marked {status} in {subject_name}."
+
+                phone_number = "09970672213"  # Replace with actual number if available per student
+                send_tcp_message_to_vb_server(phone_number, message)
+                            
+                
             return redirect('teacher-attendance')
         else:
             print('Form invalid')
