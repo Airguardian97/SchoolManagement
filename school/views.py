@@ -24,7 +24,10 @@ from students import models as SMODEL
 from django.db.models import Max
 from django.db.models import OuterRef, Subquery
 from django.db.models import Prefetch
-
+import socket
+from Crypto.Cipher import AES  # Ensure AES is imported
+from Crypto.Util.Padding import pad  # Ensure pad is imported from Crypto.Util.Padding
+from base64 import b64encode
 
 
 def home_view(request):
@@ -774,6 +777,9 @@ def teacher_take_attendance_view(request, cl):
                 AttendanceModel.roll = students[i].ref  # or use another unique identifier if needed
                 AttendanceModel.subject_code = cl  # Set the subject_code field
                 AttendanceModel.save()
+                
+                        # After saving, send TCP message
+                send_tcp_message_to_vb_server("0987654321", "Attendance saved successfully.")
 
             return redirect('teacher-attendance')
         else:
@@ -788,8 +794,41 @@ def teacher_take_attendance_view(request, cl):
     })
 
 
+# AES Key and IV (must match the server!)
+AES_KEY = b"1234567890123456"  # 16 bytes for AES-128
+AES_IV = b"6543210987654321"  # 16 bytes for AES-128
+
+def encrypt_message(message: str) -> str:
+    """Encrypt the message using AES (CBC mode) and return the base64 encoded encrypted message."""
+    
+    # Initialize AES cipher in CBC mode with the specified key and IV
+    cipher = AES.new(AES_KEY, AES.MODE_CBC, AES_IV)
+    
+    # Pad the message to ensure it's a multiple of the AES block size
+    padded_data = pad(message.encode(), AES.block_size)
+    
+    # Encrypt the padded message
+    encrypted_data = cipher.encrypt(padded_data)
+    
+    # Return the base64 encoded encrypted message
+    return b64encode(encrypted_data).decode()
 
 
+def send_tcp_message_to_vb_server(phone_number, message, host='172.16.1.15', port=5566):
+    """Encrypt the message and send it to the VB.NET server over TCP."""
+    try:
+        encrypted_message = encrypt_message(f"{phone_number} -|- {message}")  # Encrypt the message
+        
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((host, port))  # Connect to the server
+            s.sendall(encrypted_message.encode())  # Send the encrypted message (already base64 encoded)
+            print("Sent via Server:", encrypted_message)
+    
+    except Exception as e:
+        print("TCP Error:", e)
+        
+        
+        
 @login_required(login_url='teacherlogin')
 @user_passes_test(is_teacher)
 def teacher_view_attendance_view(request, cl):
