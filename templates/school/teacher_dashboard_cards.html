@@ -14,27 +14,27 @@
     a:link {
       text-decoration: none;
     }
-
+  
     .order-card {
       color: #fff;
     }
-
+  
     .bg-c-blue {
       background: linear-gradient(45deg, #4099ff, #597583);
     }
-
+  
     .bg-c-green {
       background: linear-gradient(45deg, #2ed8b6, #597583);
     }
-
+  
     .bg-c-yellow {
       background: linear-gradient(45deg, #FFB64D, #597583);
     }
-
+  
     .bg-c-pink {
       background: linear-gradient(45deg, #FF5370, #597583);
     }
-
+  
     .card {
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -42,27 +42,65 @@
       margin-bottom: 30px;
       transition: transform 0.2s ease-in-out;
     }
-
+  
     .card:hover {
       transform: translateY(-5px);
     }
-
+  
     .card .card-block {
       padding: 20px;
     }
-
+  
     .order-card i {
       font-size: 30px;
+      margin-right: 10px;
     }
-
+  
     .f-left {
       float: left;
     }
-
+  
     .f-right {
       float: right;
     }
+  
+    /* Responsive adjustments */
+    @media (max-width: 767.98px) {
+      .order-card i {
+        font-size: 26px;
+      }
+  
+      .card .card-block h6 {
+        font-size: 15px;
+      }
+  
+      .card .card-block span {
+        font-size: 18px;
+      }
+    }
+  
+    @media (max-width: 575.98px) {
+      .col-md-6.col-lg-3 {
+        flex: 0 0 100%;
+        max-width: 100%;
+      }
+  
+      .order-card {
+        text-align: center;
+      }
+  
+      .order-card .f-left {
+        float: none;
+        display: block;
+        margin: 0 auto 10px;
+      }
+  
+      .order-card .text-right {
+        text-align: center;
+      }
+    }
   </style>
+  
 </head>
 
 <body>

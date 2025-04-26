@@ -8,7 +8,7 @@
   <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
   <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
 
-  <style media="screen">
+  <style>
     a:link {
       text-decoration: none;
     }
@@ -17,12 +17,19 @@
       text-align: center;
     }
 
-    .row {
-      margin: 100px;
+    @media (min-width: 768px) {
+      .row-custom {
+        margin: 50px 100px;
+      }
     }
 
-    .btnSubmit {
-      text-align: center;
+    @media (max-width: 767px) {
+      .row-custom {
+        margin: 20px 10px;
+      }
+      .table-responsive {
+        font-size: 14px;
+      }
     }
   </style>
 

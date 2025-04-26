@@ -1,0 +1,3 @@
+sms_gateway=172.16.1.15
+sms_port=2727
+sms_enabled=true

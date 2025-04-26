@@ -403,12 +403,12 @@ class Student(models.Model):
     bo = models.CharField(db_column='BO', max_length=1000)  # Field name made lowercase.
     home_address = models.CharField(db_column='home_Address', max_length=90)  # Field name made lowercase.
     religion = models.CharField(max_length=90)
-    tvprogramsmoviesbooks = models.CharField(db_column='TVProgramsMoviesBooks', max_length=90)  # Field name made lowercase.
-    first_language = models.CharField(db_column='first_Language', max_length=90)  # Field name made lowercase.
-    language_spoken = models.CharField(db_column='language_Spoken', max_length=90)  # Field name made lowercase.
-    pob = models.CharField(db_column='POB', max_length=90)  # Field name made lowercase.
-    interest = models.CharField(db_column='Interest', max_length=90)  # Field name made lowercase.
-    if_voucher = models.IntegerField(db_column='If_Voucher')  # Field name made lowercase.
+    tvprogramsmoviesbooks = models.CharField(db_column='TVProgramsMoviesBooks', max_length=90,blank=True, null=True)  # Field name made lowercase.
+    first_language = models.CharField(db_column='first_Language', max_length=90,blank=True, null=True)  # Field name made lowercase.
+    language_spoken = models.CharField(db_column='language_Spoken', max_length=90, blank=True, null=True)
+    pob = models.CharField(db_column='POB', max_length=90,blank=True, null=True)  # Field name made lowercase.
+    interest = models.CharField(db_column='Interest', max_length=90,blank=True, null=True)  # Field name made lowercase.
+    if_voucher = models.IntegerField(db_column='If_Voucher',blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
         managed = False

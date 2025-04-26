@@ -25,7 +25,7 @@ urlpatterns = [
     path('adminclick', views.adminclick_view),
     path('teacherclick', views.teacherclick_view),
     path('studentclick', views.studentclick_view),
-
+    path('parentclick', views.parentclick_view),
 
     path('adminsignup', views.admin_signup_view),
     path('studentsignup', views.student_signup_view,name='studentsignup'),
@@ -34,7 +34,7 @@ urlpatterns = [
     path('adminlogin', LoginView.as_view(template_name='school/adminlogin.html')),
     path('studentlogin', LoginView.as_view(template_name='school/studentlogin.html')),
     path('teacherlogin', LoginView.as_view(template_name='school/teacherlogin.html')),
-
+    path('parentlogin', LoginView.as_view(template_name='school/parentlogin.html')),
 
     path('afterlogin', views.afterlogin_view,name='afterlogin'),
     path('logout', LogoutView.as_view(template_name='school/index.html'),name='logout'),
@@ -99,7 +99,20 @@ urlpatterns = [
     path('view-result', views.view_result_view,name='view-result'),
     path('check-marks/<int:pk>', views.check_marks_view,name='check-marks'),
     path('student-marks', views.student_marks_view,name='student-marks'),
-        
+    
+    path('enroll/', views.new_studentenrol, name='new_studentenrol'), 
+    
+    
+    path('parent-dashboard', views.parent_dashboard_view,name='parent-dashboard'),
+    path('parent-attendance', views.parent_attendance_view,name='parent-attendance'),
+    # path('student-soa', views.student_soa,name='student-soa'),
+    # path('student-grade', views.student_grade,name='student-grade'),
+    path('parent-list/', views.parent_list, name='parent-list'),
+    path('parent-soa/', views.parent_soa, name='parent-soa'),
+    path('parent-grade/', views.parent_grade, name='parent-grade'),
+    
+    
+    
     
 
     path('aboutus', views.aboutus_view),

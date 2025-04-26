@@ -1,0 +1,111 @@
+{% extends 'school/studentbase.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f9;
+    }
+    .container {
+        width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .header h1 {
+        margin: 0;
+        font-size: 28px;
+        color: #003366;
+    }
+    .header h3 {
+        margin: 0;
+        font-size: 18px;
+        color: #555;
+    }
+    .student-list {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+    }
+    .student-card {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        width: 250px;
+        margin: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.3s ease-in-out;
+    }
+    .student-card:hover {
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    .student-card h4 {
+        font-size: 20px;
+        margin: 10px 0;
+    }
+    .student-card p {
+        margin: 5px 0;
+        color: #555;
+    }
+    .actions {
+        margin-top: 15px;
+        text-align: center;
+    }
+    .actions a {
+        text-decoration: none;
+        color: #003366;
+        font-weight: bold;
+        margin: 5px;
+        padding: 6px 12px;
+        border: 1px solid #003366;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+    .actions a:hover {
+        background-color: #003366;
+        color: #fff;
+    }
+</style>
+
+<div class="container">
+    <div class="header">
+        <h1>ADVENTIST ACADEMY ILOILO INC</h1>
+        <h3>BONGCO, POTOTAN, ILOILO</h3>
+        <h2>Student Financial Statement</h2>
+    </div>
+
+    <div class="student-list">
+        {% if student_info %}
+            {% for info in student_info %}
+                <div class="student-card">
+                    <h4>
+                        {{ info.student.first_name }} {{ info.student.middle_name }}. {{ info.student.last_name }}
+                        <p><strong>Grade Level:</strong> {{ info.grade_level }}</p>
+                    </h4>
+                    <p><strong>Firstname:</strong> {{ info.student.first_name }}</p>
+                    <p><strong>Lastname:</strong> {{ info.student.last_name }}</p>
+                    <p><strong>Middlename:</strong> {{ info.student.middle_name }}</p>
+    
+                    <div class="actions">
+                        <a href="{% url 'student-soa' %}?student_ref={{ info.student.ref }}">View SOA</a>
+                        <a href="{% url 'student-grade' %}?student_ref={{ info.student.ref }}">View Grades</a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="student-card">
+                <p>No students found.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock content %}

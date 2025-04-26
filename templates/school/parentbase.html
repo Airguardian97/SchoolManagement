@@ -4,7 +4,7 @@
 
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Viewport meta tag for mobile responsiveness -->
   <title>SMS - Django</title>
 
   <style>
@@ -193,54 +193,47 @@
 <body>
 
   <input type="checkbox" id="check">
-
-  <!-- Header -->
+  <!--header area start-->
   <header>
     <label for="check">
       <i class="fas fa-bars" id="sidebar_btn"></i>
     </label>
     <div class="left_area">
-      <h3>SMS - Teacher</h3>
+      <h3>SMS - Parents</h3>
     </div>
     <form method="POST" action="/logout">
       {% csrf_token %}
       <button type="submit" class="logout_btn">Logout</button>
     </form>
   </header>
-
-  <!-- Sidebar -->
+  <!--header area end-->
+  <!--sidebar start-->
   <div class="sidebar">
     <center>
-      <img src="{% static 'images/User0icon.png' %}" class="profile_image" alt="Profile Image">
+      <img src="{% static "images/user-default.png" %}" class="profile_image" alt="">
       <h4>{{ request.user.first_name }}</h4>
     </center>
 
-    <a href="/teacher-dashboard"><i class="fas fa-desktop"></i><span>Dashboard</span></a>
-    <a href="/teacher-attendance"><i class="fas fa-address-card"></i><span>Attendance</span></a>
-    <a href="/teacher-notice"><i class="fas fa-bullhorn"></i><span>Notice</span></a>
-    <a href="/teacher/teacher-exam"><i class="fas fa-book"></i><span>Manage Courses</span></a>
-    <a href="/teacher/teacher-question"><i class="fas fa-question-circle"></i><span>Manage Questions</span></a>
+    <a href="/student-dashboard"><i class="fas fa-desktop"></i><span>Dashboard</span></a>
+    <a href="/student-attendance"><i class="fas fa-address-card"></i><span>View Attendance</span></a>
+    {% comment %} <a href="/student-soa"><i class="fas fa-address-card"></i><span>SOA</span></a>
+    <a href="/student-grade"><i class="fas fa-address-card"></i><span>Grade</span></a> {% endcomment %}
+    <a href="/student-list"><i class="fas fa-address-card"></i><span>Student Management</span></a>
+    <a href="/student-exam"><i class="fas fa-book"></i><span>Examination</span></a>
+    <a href="/student-marks"><i class="fas fa-sort-numeric-up"></i><span>My Marks</span></a>
   </div>
+  <!--sidebar end-->
 
-  <!-- Content -->
+  <!--content start-->
   <div class="content">
-    <br><br><br><br>
+    <br><br><br><br><br>
     {% block content %}
     {% endblock content %}
-    <br><br>
+
+    <br><br><br>
     {% include "school/footer.html" %}
   </div>
-
-  <script>
-    // Collapse sidebar after clicking any link (especially useful on mobile)
-    document.querySelectorAll('.sidebar a').forEach(link => {
-      link.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-          document.getElementById('check').checked = false;
-        }
-      });
-    });
-  </script>
+  <!--content end-->
 
 </body>
 

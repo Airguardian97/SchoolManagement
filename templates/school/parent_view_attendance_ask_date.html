@@ -1,4 +1,4 @@
-{% extends 'school/adminbase.html' %}
+{% extends 'school/studentbase.html' %}
 {% load widget_tweaks %}
 
 
@@ -48,42 +48,24 @@
 
 </head>
 
-<!------ signup page for teacher by admin(sumit)  ---------->
+<!------ date page for attendance by admin(sumit)  ---------->
 <form method="post">
   {% csrf_token %}
   <div class="container register-form">
     <div class="form">
       <div class="note">
-        <p>Update Teacher Details</p>
+        <p>PLEASE ENTER DATE FOR ATTENDANCE</p>
       </div>
 
       <div class="form-content">
         <div class="row">
-          <div class="col-md-6">
+          <div class="col-md-12">
             <div class="form-group">
-              {% render_field form1.first_name class="form-control" placeholder="First Name" %}
+              {% render_field form.date class="form-control" placeholder="Enter date mm/dd/yyyy" %}
             </div>
-            <div class="form-group">
-              {% render_field form1.username class="form-control" placeholder="Username" %}
-            </div>
-            <div class="form-group">
-              {% render_field form2.mobile class="form-control" placeholder="Contact" %}
-            </div>
+
           </div>
-          <div class="col-md-6">
-            <div class="form-group">
-              {% render_field form1.last_name class="form-control" placeholder="Last Name" %}
-            </div>
-            <div class="form-group">
-              {% render_field form1.password class="form-control" placeholder="Password" %}
-            </div>
-            <div class="form-group">
-              {% render_field form2.salary class="form-control" placeholder="Salary" %}
-            </div>
-            <div class="form-group">
-              {% render_field form2.schoolid class="form-control" placeholder="School ID" %}
-            </div>
-          </div>
+
         </div>
         <button type="submit" class="btnSubmit">Submit</button>
       </div>

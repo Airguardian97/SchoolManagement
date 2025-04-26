@@ -28,7 +28,21 @@ import socket
 from Crypto.Cipher import AES  # Ensure AES is imported
 from Crypto.Util.Padding import pad  # Ensure pad is imported from Crypto.Util.Padding
 from base64 import b64encode
+from django.db.models import Q
+import logging
+from .forms import StudentForm
 
+def get_sms_config(filepath='system_settings.txt'):
+    config = {}
+    try:
+        with open(filepath, 'r') as f:
+            for line in f:
+                if '=' in line and not line.startswith('#'):
+                    key, value = line.strip().split('=', 1)
+                    config[key.strip()] = value.strip()
+    except FileNotFoundError:
+        print("Config file not found.")
+    return config
 
 def home_view(request):
     if request.user.is_authenticated:
@@ -58,7 +72,11 @@ def studentclick_view(request):
     return render(request,'school/studentclick.html')
 
 
-
+#for showing signup/login button for student
+def parentclick_view(request):
+    if request.user.is_authenticated:
+        return HttpResponseRedirect('afterlogin')
+    return render(request,'school/parentlogin.html')
 
 
 def admin_signup_view(request):
@@ -289,7 +307,26 @@ def teacher_signup_view(request):
 
 
 
+def parent_signup_view(request):
+    form1=forms.TeacherUserForm()
+    form2=forms.TeacherExtraForm()
+    mydict={'form1':form1,'form2':form2}
+    if request.method=='POST':
+        form1=forms.TeacherUserForm(request.POST)
+        form2=forms.TeacherExtraForm(request.POST)
+        if form1.is_valid() and form2.is_valid():
+            user=form1.save()
+            user.set_password(user.password)
+            user.save()
+            f2=form2.save(commit=False)
+            f2.user=user
+            user2=f2.save()
 
+            my_teacher_group = Group.objects.get_or_create(name='PARENT')
+            my_teacher_group[0].user_set.add(user)
+
+        return HttpResponseRedirect('parentlogin')
+    return render(request,'school/parentsignup.html',context=mydict)
 
 
 #for checking user is techer , student or admin
@@ -299,8 +336,11 @@ def is_teacher(user):
     return user.groups.filter(name='TEACHER').exists()
 def is_student(user):
     return user.groups.filter(name='STUDENT').exists()
+def is_parent(user):
+    return user.groups.filter(name='PARENT').exists()
 def is_student_email(user):
     return modelsv2.Parent.objects.filter(email_address=user.email).exists()
+
     
 def afterlogin_view(request):
     try:
@@ -313,7 +353,19 @@ def afterlogin_view(request):
             else:
                 return render(request, 'school/teacher_wait_for_approval.html')
         elif is_student(request.user):
+            print(is_student_email)
             if is_student_email(request.user):
+                
+                accountapproval = models.StudentExtra.objects.all().filter(user_id=request.user.id, status=True)
+                if accountapproval:
+                    return redirect('parent-dashboard')
+                else:
+                    return render(request, 'school/parent_wait_for_approval.html')
+            logout(request)          
+            return HttpResponse("Error: Unauthorized access. Please contact support.", status=403)
+        elif is_student(request.user):            
+            if is_student_email(request.user):
+                
                 accountapproval = models.StudentExtra.objects.all().filter(user_id=request.user.id, status=True)
                 if accountapproval:
                     return redirect('student-dashboard')
@@ -718,8 +770,14 @@ def teacher_dashboard_view(request):
 @login_required(login_url='teacherlogin')
 @user_passes_test(is_teacher)
 def teacher_attendance_view(request):
-    teacher_id = str(request.user.id)
-    teacher_id = "NT202401"
+    
+    teacher_extra = models.TeacherExtra.objects.get(user=request.user)
+
+    # Get the schoolid
+    teacher_id = teacher_extra.schoolid
+    
+    
+    print(teacher_id)
     subjects = modelsv2.Subject.objects.filter(teacher_id=teacher_id)
     print(subjects)
     return render(request, 'school/teacher_attendance.html', {
@@ -750,7 +808,6 @@ def teacher_take_attendance_view(request, cl):
             'message': 'No students found for this class.',
             'cl': cl
         })
-
     aform = forms.AttendanceForm()
 
     if request.method == 'POST':
@@ -782,14 +839,22 @@ def teacher_take_attendance_view(request, cl):
                 
                 first_name = student.first_name
                 last_name = student.last_name
-                subject_name = "TEST"  # Replace with actual subject if available
+                
+                                
+                subject_qs = modelsv2.Subject.objects.filter(ref=cl).values('sub_name')
+                print(subject_qs)
+                if subject_qs.exists():
+                    subject_name = subject_qs[0]['sub_name']
+                    print("Subject Name:", subject_name)
+                else:
+                    print("No subject found.")
 
                 status = Attendances[i]
 
                 message = f"{first_name} {last_name} is marked {status} in {subject_name}."
 
                 phone_number = "09970672213"  # Replace with actual number if available per student
-                send_tcp_message_to_vb_server(phone_number, message)
+                #send_tcp_message_to_vb_server(phone_number, message)
                             
                 
             return redirect('teacher-attendance')
@@ -825,7 +890,12 @@ def encrypt_message(message: str) -> str:
     return b64encode(encrypted_data).decode()
 
 
-def send_tcp_message_to_vb_server(phone_number, message, host='172.16.1.15', port=5566):
+def send_tcp_message_to_vb_server(phone_number, message,  port=5566):
+    
+    
+    sms_settings = get_sms_config()
+    host = sms_settings.get('sms_gateway', '127.0.0.1')       
+    print(host)
     """Encrypt the message and send it to the VB.NET server over TCP."""
     try:
         encrypted_message = encrypt_message(f"{phone_number} -|- {message}")  # Encrypt the message
@@ -936,7 +1006,6 @@ def student_attendance_view(request):
     return render(request,'school/student_view_attendance_ask_date.html',{'form':form})
 
 
-import logging
 
 
 @login_required(login_url='studentlogin')
@@ -948,7 +1017,7 @@ def student_soa(request):
     student_info = {}
     transactions = []
     net_balance = 0.0
-
+    
     try:
         # Fetch parent based on user email
         parents = modelsv2.Parent.objects.filter(email_address=user_email)
@@ -973,7 +1042,7 @@ def student_soa(request):
 
         # Get the selected student from the GET request
         student_ref = request.GET.get('student_ref')
-
+        print(student_ref)
         # If there's a selected student, filter by the selected student reference
         if student_ref:
             selected_student = students.get(ref=student_ref)  # This will raise an exception if not found
@@ -1003,7 +1072,7 @@ def student_soa(request):
 
             # Retrieve charges and payments
             start_date = '2024-06-01'
-            end_date = '2024-12-01'
+            end_date = '2026-12-01'
 
             queryset_charges = modelsv2.Scharges.objects.filter(stud_id=selected_student.ref, date__range=[start_date, end_date])
             queryset_payments = modelsv2.Spayment.objects.filter(stud_id=selected_student.ref, date__range=[start_date, end_date])
@@ -1286,17 +1355,24 @@ def student_grade(request):  # Accept student_ref as a parameter
         print(selected_grade)
         # Determine which grades to fetch based on the selected grade level
         if selected_grade and selected_grade != "all":
-            # Filter grades by the selected grade level
-            grades = SMODEL.Grade.objects.filter(
-                stud_id=student_ref,
-                subject_code__grade_level__ref__grade_level=selected_grade  # Filter by grade level in the Subject model
-            ).select_related('subject_code')
+            
+            # Fetch grades for grade_level 
+            grades = modelsv2.Grade.objects.filter(
+                subject_code__in=modelsv2.Studentenrollsubject.objects.filter(
+                    sr_id__grade_level=selected_grade
+                ).values('subject_code')
+            )
+            
+        
+            
+                        
         else:
-            # Get all grades for the student if 'all' is selected or no filter is applied
+                        # Get all grades for the student if 'all' is selected or no filter is applied
             grades = modelsv2.Grade.objects.filter(stud_id=student_ref).select_related('subject_code')
-
+                
         # Prepare the grades data
         for grade in grades:
+            
             subject = grade.subject_code  # Access the related Subject object directly
             subject_name = subject.sub_name if subject else "Unknown"  # Handle missing subjects
             grading_periods.add(grade.grading_period)  # Collect unique grading periods
@@ -1727,3 +1803,366 @@ def student_marks_view(request):
     courses=QMODEL.Course.objects.all()
     return render(request,'student/student_marks.html',{'courses':courses})
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#FOR STUDENT AFTER THEIR Loginnnnnnnnnnnnnnnnnnnnn
+@login_required(login_url='parentlogin')
+@user_passes_test(is_student)
+def parent_dashboard_view(request):
+    studentdata=models.StudentExtra.objects.all().filter(status=True,user_id=request.user.id)
+    notice=models.Notice.objects.all()
+    mydict={
+        'roll':studentdata[0].roll,
+        'mobile':studentdata[0].mobile,
+        'fee':studentdata[0].fee,
+        'notice':notice
+    }
+    return render(request,'school/parent_dashboard.html',context=mydict)
+
+
+
+@login_required(login_url='parentlogin')
+@user_passes_test(is_student)
+def parent_attendance_view(request):
+    form=forms.AskDateForm()
+    if request.method=='POST':
+        form=forms.AskDateForm(request.POST)
+        if form.is_valid():
+            date=form.cleaned_data['date']
+            studentdata=models.StudentExtra.objects.all().filter(user_id=request.user.id,status=True)
+            attendancedata=models.Attendance.objects.all().filter(date=date,cl=studentdata[0].cl,roll=studentdata[0].roll)
+            mylist=zip(attendancedata,studentdata)
+            return render(request,'school/parent_view_attendance_page.html',{'mylist':mylist,'date':date})
+        else:
+            print('form invalid')
+    return render(request,'school/parent_view_attendance_ask_date.html',{'form':form})
+
+
+
+
+@login_required(login_url='parentlogin')
+@user_passes_test(is_student)
+def parent_soa(request):
+    user_email = request.user.email
+    students = []
+    selected_student = None
+    student_info = {}
+    transactions = []
+    net_balance = 0.0
+    
+    try:
+        # Fetch parent based on user email
+        parents = modelsv2.Parent.objects.filter(email_address=user_email)
+
+        if not parents.exists():
+            print("Parent not found for the given email.")
+            return render(request, 'school/error.html', {'message': 'Parent not found.'})
+
+        parent = parents.first()  # Select the first parent if multiple exist for now
+
+        # Fetch associated students
+        parent_students = modelsv2.Parentstudent.objects.filter(gid=parent.pid)
+
+        if parent_students.exists():
+            students = modelsv2.Student.objects.filter(ref__in=[ps.stud_id for ps in parent_students])
+            if students.exists():
+                print("Students found:", students)
+            else:
+                print("No students found for this parent.")
+        else:
+            print("No student records associated with this parent.")
+
+        # Get the selected student from the GET request
+        student_ref = request.GET.get('student_ref')
+        print(student_ref)
+        # If there's a selected student, filter by the selected student reference
+        if student_ref:
+            selected_student = students.get(ref=student_ref)  # This will raise an exception if not found
+            print("Selected student:", selected_student)
+        else:
+            selected_student = students.first()  # Set the first student as default if none selected
+
+        # Fetch the latest Studentregister data for the selected student
+        latest_register = None
+        if selected_student:
+            latest_register = (
+                SMODEL.Studentregister.objects.filter(stud_id=selected_student.ref)
+                .annotate(latest_date=Max('dor'))  # Replace 'dor' with the correct field name
+                .order_by('-latest_date')
+                .first()
+            )
+            print("Latest register:", latest_register)
+
+        # Prepare student information including grade level from Studentregister
+        if selected_student:
+            student_info = {
+                'lrn_no': selected_student.lrn_no,
+                'name': f"{selected_student.last_name}, {selected_student.first_name} {selected_student.middle_name or ''}",
+                'grade': latest_register.grade_level if latest_register else "N/A",
+                'voucher': selected_student.if_voucher,
+            }
+
+            # Retrieve charges and payments
+            start_date = '2024-06-01'
+            end_date = '2026-12-01'
+
+            queryset_charges = modelsv2.Scharges.objects.filter(stud_id=selected_student.ref, date__range=[start_date, end_date])
+            queryset_payments = modelsv2.Spayment.objects.filter(stud_id=selected_student.ref, date__range=[start_date, end_date])
+
+            # Combine and prepare transactions for display
+            charges = queryset_charges.annotate(
+                c_amount=F('amount'),
+                p_amount=Value(0),
+                transaction_type=Value('Charge')
+            )
+            payments = queryset_payments.annotate(
+                c_amount=Value(0),
+                p_amount=F('amount'),
+                transaction_type=Value('Payment')
+            )
+
+            transactions = sorted(
+                list(charges) + list(payments),
+                key=lambda t: t.date
+            )
+
+            # Calculate running balance
+            balance = 0
+            for transaction in transactions:
+                balance += transaction.c_amount - transaction.p_amount
+                transaction.balance = balance
+
+            # Set the final net balance
+            net_balance = balance
+
+    except Exception as e:
+        print(f"An unexpected error occurred: {str(e)}")
+        return render(request, 'school/error.html', {'message': 'An unexpected error occurred.'})
+
+    # Return the data to the template
+    return render(request, 'school/student_soa.html', {
+        'students': students,
+        'selected_student': selected_student,
+        'student_info': student_info,
+        'transactions': transactions,
+        'net_balance': net_balance,
+    })
+
+    
+    
+@login_required(login_url='studentlogin')
+@user_passes_test(is_student)
+def parent_list(request):
+    user_email = request.user.email
+    students = []
+    student_info = []
+    transactions = []
+    net_balance = 0.0
+
+    try:
+        # Fetch parent based on user email
+        parents = modelsv2.Parent.objects.filter(email_address=user_email)
+
+        if not parents.exists():
+            print("Parent not found for the given email.")
+            return render(request, 'school/error.html', {'message': 'Parent not found.'})
+
+        parent = parents.first()  # Select the first parent if multiple exist for now
+        
+        # Fetch associated students
+        parent_students = modelsv2.Parentstudent.objects.filter(gid=parent.pid)
+        print(parent_students)
+        if parent_students.exists():
+            students = modelsv2.Student.objects.filter(ref__in=[ps.stud_id for ps in parent_students])
+            if students.exists():
+                student_ids = students.values_list('ref', flat=True)
+
+                print("Students found:", students)
+
+                # Subquery for the latest Studentregister entry
+                from django.db.models import OuterRef, Subquery
+
+                latest_register_subquery = SMODEL.Studentregister.objects.filter(
+                    stud_id=OuterRef('ref')
+                ).order_by('-dor').values('pk')[:1]
+
+                # Annotate the latest Studentregister entry
+                students = students.annotate(latest_register_id=Subquery(latest_register_subquery))
+
+                # Fetch additional Studentregister details
+                student_info = [
+                    {
+                        'student': student,
+                        'latest_register': SMODEL.Studentregister.objects.filter(pk=student.latest_register_id).first(),
+                    }
+                    for student in students
+                ]
+
+                # Process student_info to include grade level
+                for info in student_info:
+                    student_register = info['latest_register']
+                    if student_register:
+                        # Get the grade_level using the 'grade_level' field in Gradelevels
+                        grade_level_obj = SMODEL.Gradelevels.objects.filter(ref=student_register.grade_level).first()
+                        if grade_level_obj:
+                            info['grade_level'] = grade_level_obj.grade_level  # Use the grade_level name from Gradelevels model
+                        else:
+                            info['grade_level'] = "N/A"  # Default if no matching grade level found
+                    else:
+                        info['grade_level'] = "N/A"  # Default if no register found
+
+                if student_info:
+                    print("Student info with latest registers and grade levels:", student_info)
+                else:
+                    print("No StudentRegister records found for these students.")
+            else:
+                print("No students found for this parent.")
+        else:
+            print("No student records associated with this parent.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {str(e)}")
+        return render(request, 'school/error.html', {'message': 'An unexpected error occurred.'})
+
+    # Return the data to the template
+    return render(request, 'school/parent_list.html', {
+        'students': students,
+        'student_info': student_info,
+    })
+
+
+@login_required(login_url='studentlogin')
+@user_passes_test(is_student)
+def parent_grade(request):  # Accept student_ref as a parameter
+    user_email = request.user.email
+    student_ref = request.GET.get('student_ref')  # Get the student_ref from the URL parameters
+    print(student_ref)
+    try:
+     
+        # Get distinct grade levels the student is registered for
+        # grade_levels = modelsv2.Studentregister.objects.filter(stud_id=student_ref).values('grade_level').distinct()
+        grade_levels = SMODEL.Studentregister.objects.filter(stud_id=student_ref)
+        grade_level_objects = []
+        for grade_level in grade_levels:
+            grade_level_obj = SMODEL.Gradelevels.objects.get(ref=grade_level.grade_level)
+            grade_level_objects.append(grade_level_obj)
+            print(grade_level_obj.grade_level)
+
+        # Initialize data structures
+        grades_data = []
+        grading_periods = set()
+
+        # Check if a grade level is selected via GET request
+        selected_grade = request.GET.get('grade_level')
+        print(selected_grade)
+        # Determine which grades to fetch based on the selected grade level
+        if selected_grade and selected_grade != "all":
+            
+            # Fetch grades for grade_level 
+            grades = modelsv2.Grade.objects.filter(
+                subject_code__in=modelsv2.Studentenrollsubject.objects.filter(
+                    sr_id__grade_level=selected_grade
+                ).values('subject_code')
+            )
+            
+        
+            
+                        
+        else:
+                        # Get all grades for the student if 'all' is selected or no filter is applied
+            grades = modelsv2.Grade.objects.filter(stud_id=student_ref).select_related('subject_code')
+                
+        # Prepare the grades data
+        for grade in grades:
+            
+            subject = grade.subject_code  # Access the related Subject object directly
+            subject_name = subject.sub_name if subject else "Unknown"  # Handle missing subjects
+            grading_periods.add(grade.grading_period)  # Collect unique grading periods
+
+            grades_data.append({
+                'subject_code': grade.subject_code.subject_code,  # Include subject code
+                'subject_name': subject_name,
+                'stud_grade': grade.stud_grade,
+                'gradelevel': grade.subject_code.grade_level,
+                'grading_period': grade.grading_period,
+            })
+
+        # Pivot grades data for each subject and grading period
+        pivoted_grades_data = {}
+        for grade in grades_data:
+            subject_name = grade['subject_name']
+            grading_period = grade['grading_period']
+            stud_grade = grade['stud_grade']
+
+            if subject_name not in pivoted_grades_data:
+                pivoted_grades_data[subject_name] = {'subject_name': subject_name}
+
+            # Add grade for the grading period
+            pivoted_grades_data[subject_name][grading_period] = stud_grade
+        
+        # Convert pivoted data to a list of dictionaries
+        grades_data_list = list(pivoted_grades_data.values())
+        grading_periods_list = sorted(list(grading_periods))  # Sort grading periods for consistency
+
+        # # Check if it's an AJAX request (if it's an AJAX request, return JSON data)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'grades': grades_data_list,
+                'grading_periods': grading_periods_list
+            })
+
+        # Prepare context for the initial page load
+        context = {
+            'grade_levels': grade_level_objects,
+            'grades': grades_data_list,
+            'grading_periods': grading_periods_list,
+            'student_ref': student_ref,
+        }
+
+        return render(request, 'school/student_grade.html', context)
+
+    except modelsv2.Parent.DoesNotExist:
+        return render(request, 'school/error.html', {'message': 'Parent not found.'})
+    except modelsv2.Parentstudent.DoesNotExist:
+        return render(request, 'school/error.html', {'message': 'Student not associated with this parent.'})
+    except Exception as e:
+        print(f"An unexpected error occurred: {str(e)}")
+        return render(request, 'school/error.html', {'message': 'An unexpected error occurred.'})
+    
+    
+    
+def new_studentenrol(request):
+    if request.method == "POST":
+        form = StudentForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Student enrolled successfully!")
+            return redirect('new_studentenrol')  # <-- Name in your `urls.py`
+    else:
+        form = StudentForm()
+
+    return render(request, 'school/new_studentenrol.html', {'form': form})
+

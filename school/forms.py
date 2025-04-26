@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from . import models
+from . import models, modelsv2
 
 #for admin
 class AdminSigupForm(forms.ModelForm):
@@ -29,7 +29,7 @@ class TeacherUserForm(forms.ModelForm):
 class TeacherExtraForm(forms.ModelForm):
     class Meta:
         model=models.TeacherExtra
-        fields=['salary','mobile','status']
+        fields=['salary','mobile','status','schoolid']
 
 
 
@@ -59,3 +59,27 @@ class ContactusForm(forms.Form):
     Name = forms.CharField(max_length=30)
     Email = forms.EmailField()
     Message = forms.CharField(max_length=500,widget=forms.Textarea(attrs={'rows': 3, 'cols': 30}))
+    
+    
+    
+class StudentForm(forms.ModelForm):
+    class Meta:
+        model = modelsv2.Student
+        fields = [
+            'lrn_no', 'last_name', 'first_name', 'middle_name', 'nick_name',
+            'sex', 'dob', 'age', 'bo', 'home_address', 'religion', 'tvprogramsmoviesbooks',
+            'first_language', 'language_spoken', 'pob', 'interest'
+        ]
+        widgets = {
+            'dob': forms.DateInput(attrs={'type': 'date'}),
+            'bo': forms.Textarea(attrs={'rows': 3}),
+            'tvprogramsmoviesbooks': forms.Textarea(attrs={'rows': 2}),
+            'interest': forms.Textarea(attrs={'rows': 2}),
+        }
+    
+    # Add Grade Level dropdown filtered by school year '2025-2026'
+    gradelevel = forms.ModelChoiceField(
+        queryset=modelsv2.Gradelevels.objects.filter(school_year='SY. 2025-2026'),  # Filter by school year
+        empty_label="Select Grade Level",  # Set placeholder
+        widget=forms.Select(attrs={'class': 'form-control'})  # Optional styling
+    )

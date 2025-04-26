@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Enroll New Student</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color:rgb(8, 64, 112);
+      color: #333;
+    }
+
+    .form-section {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .form-card {
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 600px;
+      padding: 30px;
+    }
+
+    .form-title {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 20px;
+      color: #007bff;
+    }
+
+    .form-control {
+      border-radius: 5px;
+      padding: 12px 15px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+      border-color: #007bff;
+      box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    }
+
+    .form-label {
+      font-weight: 600;
+      color: #555;
+    }
+
+    .submit-btn {
+      background-color: #007bff;
+      color: #fff;
+      border-radius: 5px;
+      padding: 12px 20px;
+      font-size: 1.2rem;
+      width: 100%;
+      cursor: pointer;
+      border: none;
+      transition: all 0.3s ease;
+    }
+
+    .submit-btn:hover {
+      background-color: #0056b3;
+      box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+    }
+
+    .error-message {
+      color: #f44336;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="form-section">
+    <div class="form-card">
+      <h2 class="form-title">Student Enrollment Form</h2>
+
+      <form method="POST" novalidate>
+        {% csrf_token %}
+
+                <!-- Render the Grade Level dropdown -->
+                <div>
+                    <label for="{{ form.gradelevel.id_for_label }}">Grade Level:</label>
+                    {{ form.gradelevel }}
+                </div>
+
+
+        <div class="mb-3">
+          <label for="lrn_no" class="form-label">LRN Number</label>
+          <input type="text" class="form-control" id="lrn_no" name="lrn_no" placeholder="LRN Number" value="{{ form.lrn_no.value|default_if_none:'' }}">
+          {% if form.lrn_no.errors %}
+            <div class="error-message">{{ form.lrn_no.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="first_name" class="form-label">First Name</label>
+          <input type="text" class="form-control" id="first_name" name="first_name" placeholder="First Name" value="{{ form.first_name.value|default_if_none:'' }}">
+          {% if form.first_name.errors %}
+            <div class="error-message">{{ form.first_name.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="last_name" class="form-label">Last Name</label>
+          <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Last Name" value="{{ form.last_name.value|default_if_none:'' }}">
+          {% if form.last_name.errors %}
+            <div class="error-message">{{ form.last_name.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="middle_name" class="form-label">Middle Name</label>
+          <input type="text" class="form-control" id="middle_name" name="middle_name" placeholder="Middle Name" value="{{ form.middle_name.value|default_if_none:'' }}">
+          {% if form.middle_name.errors %}
+            <div class="error-message">{{ form.middle_name.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="nick_name" class="form-label">Nick Name</label>
+          <input type="text" class="form-control" id="nick_name" name="nick_name" placeholder="Nick Name" value="{{ form.nick_name.value|default_if_none:'' }}">
+          {% if form.nick_name.errors %}
+            <div class="error-message">{{ form.nick_name.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="sex" class="form-label">Gender</label>
+          <select class="form-control" id="sex" name="sex">
+            <option value="Male" {% if form.sex.value == "Male" %}selected{% endif %}>Male</option>
+            <option value="Female" {% if form.sex.value == "Female" %}selected{% endif %}>Female</option>
+          </select>
+          {% if form.sex.errors %}
+            <div class="error-message">{{ form.sex.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="dob" class="form-label">Date of Birth</label>
+          <input type="date" class="form-control" id="dob" name="dob" value="{{ form.dob.value|default_if_none:'' }}">
+          {% if form.dob.errors %}
+            <div class="error-message">{{ form.dob.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="age" class="form-label">Age</label>
+          <input type="text" class="form-control" id="age" name="age" placeholder="Age" value="{{ form.age.value|default_if_none:'' }}">
+          {% if form.age.errors %}
+            <div class="error-message">{{ form.age.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="bo" class="form-label">Birth Order</label>
+          <input type="text" class="form-control" id="bo" name="bo" placeholder="Birth Order" value="{{ form.bo.value|default_if_none:'' }}">
+          {% if form.bo.errors %}
+            <div class="error-message">{{ form.bo.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="home_address" class="form-label">Home Address</label>
+          <input type="text" class="form-control" id="home_address" name="home_address" placeholder="Home Address" value="{{ form.home_address.value|default_if_none:'' }}">
+          {% if form.home_address.errors %}
+            <div class="error-message">{{ form.home_address.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="religion" class="form-label">Religion</label>
+          <input type="text" class="form-control" id="religion" name="religion" placeholder="Religion" value="{{ form.religion.value|default_if_none:'' }}">
+          {% if form.religion.errors %}
+            <div class="error-message">{{ form.religion.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="tvprogramsmoviesbooks" class="form-label">Favorite TV/Program/Movies/Books</label>
+          <input type="text" class="form-control" id="tvprogramsmoviesbooks" name="tvprogramsmoviesbooks" placeholder="Favorite TV/Program/Movies/Books" value="{{ form.tvprogramsmoviesbooks.value|default_if_none:'' }}">
+          {% if form.tvprogramsmoviesbooks.errors %}
+            <div class="error-message">{{ form.tvprogramsmoviesbooks.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="first_language" class="form-label">First Language</label>
+          <select class="form-control" id="first_language" name="first_language">
+            <option value="English" {% if form.first_language.value == "English" %}selected{% endif %}>English</option>
+            <option value="Tagalog" {% if form.first_language.value == "Tagalog" %}selected{% endif %}>Tagalog</option>
+          </select>
+          {% if form.first_language.errors %}
+            <div class="error-message">{{ form.first_language.errors|join:", " }}</div>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="submit-btn">Enroll Student</button>
+
+        {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-success" role="alert">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

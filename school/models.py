@@ -9,6 +9,7 @@ class TeacherExtra(models.Model):
     joindate=models.DateField(auto_now_add=True)
     mobile = models.CharField(max_length=40)
     status=models.BooleanField(default=False)
+    schoolid=models.CharField(max_length=40)
     def __str__(self):
         return self.user.first_name
     @property
