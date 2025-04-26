@@ -2,225 +2,210 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Enroll New Student</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- Bootstrap 5 CSS -->
+  <title>Enrollment Form</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color:rgb(8, 64, 112);
-      color: #333;
+      background: linear-gradient(135deg, #e0f7fa, #e1bee7);
     }
-
-    .form-section {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
-
-    .form-card {
-      background-color: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 600px;
-      padding: 30px;
-    }
-
-    .form-title {
-      text-align: center;
-      font-size: 2rem;
-      margin-bottom: 20px;
-      color: #007bff;
-    }
-
-    .form-control {
-      border-radius: 5px;
-      padding: 12px 15px;
-      margin-bottom: 20px;
-      border: 1px solid #ccc;
-      transition: all 0.3s ease;
-    }
-
-    .form-control:focus {
-      border-color: #007bff;
-      box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-    }
-
-    .form-label {
-      font-weight: 600;
-      color: #555;
-    }
-
-    .submit-btn {
-      background-color: #007bff;
-      color: #fff;
-      border-radius: 5px;
-      padding: 12px 20px;
-      font-size: 1.2rem;
-      width: 100%;
-      cursor: pointer;
-      border: none;
-      transition: all 0.3s ease;
-    }
-
-    .submit-btn:hover {
-      background-color: #0056b3;
-      box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
-    }
-
     .error-message {
-      color: #f44336;
-      font-size: 0.875rem;
+      color: red;
+      font-size: 0.875em;
     }
   </style>
 </head>
-<body>
+<body class="d-flex align-items-center justify-content-center min-vh-100 p-4">
 
-  <div class="form-section">
-    <div class="form-card">
-      <h2 class="form-title">Student Enrollment Form</h2>
+<div class="container" style="max-width: 800px; background: #ffffff; padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+  <h2 class="mb-4 text-center">Enrollment Form</h2>
 
-      <form method="POST" novalidate>
-        {% csrf_token %}
-
-                <!-- Render the Grade Level dropdown -->
-                <div>
-                    <label for="{{ form.gradelevel.id_for_label }}">Grade Level:</label>
-                    {{ form.gradelevel }}
-                </div>
-
-
-        <div class="mb-3">
-          <label for="lrn_no" class="form-label">LRN Number</label>
-          <input type="text" class="form-control" id="lrn_no" name="lrn_no" placeholder="LRN Number" value="{{ form.lrn_no.value|default_if_none:'' }}">
-          {% if form.lrn_no.errors %}
-            <div class="error-message">{{ form.lrn_no.errors|join:", " }}</div>
-          {% endif %}
-        </div>
-
-        <div class="mb-3">
-          <label for="first_name" class="form-label">First Name</label>
-          <input type="text" class="form-control" id="first_name" name="first_name" placeholder="First Name" value="{{ form.first_name.value|default_if_none:'' }}">
-          {% if form.first_name.errors %}
-            <div class="error-message">{{ form.first_name.errors|join:", " }}</div>
-          {% endif %}
-        </div>
-
-        <div class="mb-3">
-          <label for="last_name" class="form-label">Last Name</label>
-          <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Last Name" value="{{ form.last_name.value|default_if_none:'' }}">
-          {% if form.last_name.errors %}
-            <div class="error-message">{{ form.last_name.errors|join:", " }}</div>
-          {% endif %}
-        </div>
-
-        <div class="mb-3">
-          <label for="middle_name" class="form-label">Middle Name</label>
-          <input type="text" class="form-control" id="middle_name" name="middle_name" placeholder="Middle Name" value="{{ form.middle_name.value|default_if_none:'' }}">
-          {% if form.middle_name.errors %}
-            <div class="error-message">{{ form.middle_name.errors|join:", " }}</div>
-          {% endif %}
-        </div>
-
-        <div class="mb-3">
-          <label for="nick_name" class="form-label">Nick Name</label>
-          <input type="text" class="form-control" id="nick_name" name="nick_name" placeholder="Nick Name" value="{{ form.nick_name.value|default_if_none:'' }}">
-          {% if form.nick_name.errors %}
-            <div class="error-message">{{ form.nick_name.errors|join:", " }}</div>
-          {% endif %}
-        </div>
-
-        <div class="mb-3">
-          <label for="sex" class="form-label">Gender</label>
-          <select class="form-control" id="sex" name="sex">
-            <option value="Male" {% if form.sex.value == "Male" %}selected{% endif %}>Male</option>
-            <option value="Female" {% if form.sex.value == "Female" %}selected{% endif %}>Female</option>
+  <!-- Tabs -->
+  <ul class="nav nav-tabs" id="enrollmentTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" data-bs-target="#basic" type="button" role="tab">Basic Info</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="address-tab" data-bs-toggle="tab" data-bs-target="#address" type="button" role="tab">Address Info</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="other-tab" data-bs-toggle="tab" data-bs-target="#other" type="button" role="tab">Other Details</button>
+    </li>
+  </ul>
+  <!-- Tabs Content -->
+  <form method="POST" novalidate class="tab-content mt-3" id="enrollmentTabsContent" onsubmit="return validateForm();">
+    {% csrf_token %}
+    <!-- Basic Info Tab -->
+    <div class="tab-pane fade show active" id="basic" role="tabpanel">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label for="gradelevel" class="form-label">Grade Level:</label>
+          <select class="form-select" id="gradelevel" name="gradelevel">
+            <option selected disabled>Select Grade Level</option>
+            <option>Grade 1</option>
+            <option>Grade 2</option>
+            <option>Grade 3</option>
+            <!-- Add more options as needed -->
           </select>
-          {% if form.sex.errors %}
-            <div class="error-message">{{ form.sex.errors|join:", " }}</div>
-          {% endif %}
+          <div class="error-message" id="gradelevelError"></div>
         </div>
+        <div class="col-md-6">
+          <label for="lrnNo" class="form-label">LRN No.</label>
+          <input type="text" class="form-control" id="lrnNo" name="lrnNo">
+          <div class="error-message" id="lrnNoError"></div>
+        </div>
+      </div>
+      
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label for="firstName" class="form-label">First Name</label>
+          <input type="text" class="form-control" id="firstName" name="firstName">
+          <div class="error-message" id="firstNameError"></div>
+        </div>
+        <div class="col-md-4">
+          <label for="lastName" class="form-label">Last Name</label>
+          <input type="text" class="form-control" id="lastName" name="lastName">
+          <div class="error-message" id="lastNameError"></div>
+        </div>
+        <div class="col-md-4">
+          <label for="middleName" class="form-label">Middle Name</label>
+          <input type="text" class="form-control" id="middleName" name="middleName">
+          <div class="error-message" id="middleNameError"></div>
+        </div>
+      </div>
 
-        <div class="mb-3">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label for="nickName" class="form-label">Nick Name</label>
+          <input type="text" class="form-control" id="nickName" name="nickName">
+          <div class="error-message" id="nickNameError"></div>
+        </div>
+        <div class="col-md-6">
+          <label for="gender" class="form-label">Gender</label>
+          <select class="form-select" id="gender" name="gender">
+            <option selected disabled>Select</option>
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+          <div class="error-message" id="genderError"></div>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-4">
           <label for="dob" class="form-label">Date of Birth</label>
-          <input type="date" class="form-control" id="dob" name="dob" value="{{ form.dob.value|default_if_none:'' }}">
-          {% if form.dob.errors %}
-            <div class="error-message">{{ form.dob.errors|join:", " }}</div>
-          {% endif %}
+          <input type="date" class="form-control" id="dob" name="dob">
+          <div class="error-message" id="dobError"></div>
         </div>
-
-        <div class="mb-3">
+        <div class="col-md-4">
           <label for="age" class="form-label">Age</label>
-          <input type="text" class="form-control" id="age" name="age" placeholder="Age" value="{{ form.age.value|default_if_none:'' }}">
-          {% if form.age.errors %}
-            <div class="error-message">{{ form.age.errors|join:", " }}</div>
-          {% endif %}
+          <input type="number" class="form-control" id="age" name="age">
+          <div class="error-message" id="ageError"></div>
         </div>
-
-        <div class="mb-3">
-          <label for="bo" class="form-label">Birth Order</label>
-          <input type="text" class="form-control" id="bo" name="bo" placeholder="Birth Order" value="{{ form.bo.value|default_if_none:'' }}">
-          {% if form.bo.errors %}
-            <div class="error-message">{{ form.bo.errors|join:", " }}</div>
-          {% endif %}
+        <div class="col-md-4">
+          <label for="birthOrder" class="form-label">Birth Order</label>
+          <input type="text" class="form-control" id="birthOrder" name="birthOrder">
+          <div class="error-message" id="birthOrderError"></div>
         </div>
+      </div>
 
-        <div class="mb-3">
-          <label for="home_address" class="form-label">Home Address</label>
-          <input type="text" class="form-control" id="home_address" name="home_address" placeholder="Home Address" value="{{ form.home_address.value|default_if_none:'' }}">
-          {% if form.home_address.errors %}
-            <div class="error-message">{{ form.home_address.errors|join:", " }}</div>
-          {% endif %}
-        </div>
-
-        <div class="mb-3">
-          <label for="religion" class="form-label">Religion</label>
-          <input type="text" class="form-control" id="religion" name="religion" placeholder="Religion" value="{{ form.religion.value|default_if_none:'' }}">
-          {% if form.religion.errors %}
-            <div class="error-message">{{ form.religion.errors|join:", " }}</div>
-          {% endif %}
-        </div>
-
-        <div class="mb-3">
-          <label for="tvprogramsmoviesbooks" class="form-label">Favorite TV/Program/Movies/Books</label>
-          <input type="text" class="form-control" id="tvprogramsmoviesbooks" name="tvprogramsmoviesbooks" placeholder="Favorite TV/Program/Movies/Books" value="{{ form.tvprogramsmoviesbooks.value|default_if_none:'' }}">
-          {% if form.tvprogramsmoviesbooks.errors %}
-            <div class="error-message">{{ form.tvprogramsmoviesbooks.errors|join:", " }}</div>
-          {% endif %}
-        </div>
-
-        <div class="mb-3">
-          <label for="first_language" class="form-label">First Language</label>
-          <select class="form-control" id="first_language" name="first_language">
-            <option value="English" {% if form.first_language.value == "English" %}selected{% endif %}>English</option>
-            <option value="Tagalog" {% if form.first_language.value == "Tagalog" %}selected{% endif %}>Tagalog</option>
-          </select>
-          {% if form.first_language.errors %}
-            <div class="error-message">{{ form.first_language.errors|join:", " }}</div>
-          {% endif %}
-        </div>
-
-        <button type="submit" class="submit-btn">Enroll Student</button>
-
-        {% if messages %}
-        {% for message in messages %}
-          <div class="alert alert-success" role="alert">
-            {{ message }}
-          </div>
-        {% endfor %}
-      {% endif %}
-
-      </form>
+      <div class="d-flex justify-content-end">
+        <button type="button" class="btn btn-primary" onclick="nextTab('address')">Next</button>
+      </div>
     </div>
-  </div>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Address Info Tab -->
+    <div class="tab-pane fade" id="address" role="tabpanel">
+      <div class="mb-3">
+        <label for="homeAddress" class="form-label">Home Address</label>
+        <textarea class="form-control" id="homeAddress" name="homeAddress" rows="3"></textarea>
+        <div class="error-message" id="homeAddressError"></div>
+      </div>
+
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-secondary" onclick="prevTab('basic')">Previous</button>
+        <button type="button" class="btn btn-primary" onclick="nextTab('other')">Next</button>
+      </div>
+    </div>
+
+    <!-- Other Details Tab -->
+    <div class="tab-pane fade" id="other" role="tabpanel">
+      <div class="mb-3">
+        <label for="religion" class="form-label">Religion</label>
+        <input type="text" class="form-control" id="religion" name="religion">
+        <div class="error-message" id="religionError"></div>
+      </div>
+      <div class="mb-3">
+        <label for="favorites" class="form-label">Favorite TV Programs / Movies / Books</label>
+        <textarea class="form-control" id="favorites" name="favorites" rows="3"></textarea>
+        <div class="error-message" id="favoritesError"></div>
+      </div>
+      <div class="mb-3">
+        <label for="firstLanguage" class="form-label">First Language</label>
+        <input type="text" class="form-control" id="firstLanguage" name="firstLanguage">
+        <div class="error-message" id="firstLanguageError"></div>
+      </div>
+
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-secondary" onclick="prevTab('address')">Previous</button>
+        <button type="submit" class="btn btn-success">Submit</button>
+      </div>
+    </div>
+
+  </form>
+
+</div>
+
+<!-- Bootstrap 5 JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Tab Navigation and Validation Script -->
+<script>
+function nextTab(tabId) {
+  var tab = new bootstrap.Tab(document.querySelector('#' + tabId + '-tab'));
+  tab.show();
+}
+
+function prevTab(tabId) {
+  var tab = new bootstrap.Tab(document.querySelector('#' + tabId + '-tab'));
+  tab.show();
+}
+
+function validateForm() {
+  let isValid = true;
+
+  // Clear previous error messages
+  document.querySelectorAll('.error-message').forEach(e => e.innerText = '');
+
+  // Example validations
+  const requiredFields = [
+    { id: 'gradelevel', message: 'Please select a grade level.' },
+    { id: 'lrnNo', message: 'LRN Number is required.' },
+    { id: 'firstName', message: 'First name is required.' },
+    { id: 'lastName', message: 'Last name is required.' },
+    { id: 'middleName', message: 'Middle name is required.' },
+    { id: 'nickName', message: 'Nick name is required.' },
+    { id: 'gender', message: 'Please select gender.' },
+    { id: 'dob', message: 'Date of birth is required.' },
+    { id: 'age', message: 'Age is required.' },
+    { id: 'birthOrder', message: 'Birth order is required.' },
+    { id: 'homeAddress', message: 'Home address is required.' },
+    { id: 'religion', message: 'Religion is required.' },
+    { id: 'favorites', message: 'Favorite programs/movies/books are required.' },
+    { id: 'firstLanguage', message: 'First language is required.' },
+  ];
+
+  requiredFields.forEach(field => {
+    const element = document.getElementById(field.id);
+    if (!element.value || element.value === 'Select' || element.value === 'Select Grade Level') {
+      document.getElementById(field.id + 'Error').innerText = field.message;
+      isValid = false;
+    }
+  });
+
+  return isValid; // If true, form will submit, otherwise block
+}
+</script>
+
 </body>
 </html>
