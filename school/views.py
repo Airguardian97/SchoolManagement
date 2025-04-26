@@ -2153,6 +2153,7 @@ def parent_grade(request):  # Accept student_ref as a parameter
         return render(request, 'school/error.html', {'message': 'An unexpected error occurred.'})
     
     
+
     
 def new_studentenrol(request):
     if request.method == "POST":
@@ -2161,8 +2162,11 @@ def new_studentenrol(request):
             form.save()
             messages.success(request, "Student enrolled successfully!")
             return redirect('new_studentenrol')  # <-- Name in your `urls.py`
+        else:
+            # Log the form errors to help debug
+            print(form.errors)  # This will show form errors in the console
+            messages.error(request, "There was an error with the form. Please check the fields and try again.")
     else:
         form = StudentForm()
 
     return render(request, 'school/new_studentenrol.html', {'form': form})
-
